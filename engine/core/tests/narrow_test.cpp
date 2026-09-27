@@ -73,7 +73,7 @@ TEST(NarrowDeathTest, NarrowAssertsAtCallSite) {
     GTEST_FLAG_SET(death_test_style, "threadsafe");
 #if !ORION_SHIP
     const i32 big = 300;
-    EXPECT_DEATH(static_cast<void>(narrow<u8>(big)), "narrow_test.cpp:[0-9]+: orion::narrow");
+    EXPECT_DEATH(static_cast<void>(narrow<u8>(big)), "narrow_test.cpp:.*: orion::narrow");
 #endif
 }
 

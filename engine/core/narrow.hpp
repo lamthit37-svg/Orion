@@ -62,7 +62,9 @@ template <std::integral I, std::floating_point F>
     return value >= kLower && value < kUpper;
 }
 
-// Kiểm khoảng trước khi ép, vì ép số thực ra ngoài khoảng của kiểu đích là UB.
+// Kiểm khoảng trước khi ép, vì ép số thực ra ngoài khoảng của kiểu đích là UB. Mỗi nhánh
+// `if constexpr` có `else` riêng để mọi bản thể của template chỉ có một lệnh return tới được
+// (MSVC báo C4702 cho code sau return trong nhánh constexpr).
 template <Arithmetic To, Arithmetic From>
 [[nodiscard]] constexpr bool in_range_for_cast(const From value) noexcept {
     if constexpr (std::floating_point<From> && std::floating_point<To>) {
@@ -72,8 +74,9 @@ template <Arithmetic To, Arithmetic From>
             // NaN và vô cực đổi sang kiểu số thực khác vẫn là chính nó.
             return !finite || (value <= static_cast<From>(std::numeric_limits<To>::max()) &&
                                value >= static_cast<From>(std::numeric_limits<To>::lowest()));
+        } else {
+            return true;
         }
-        return true;
     } else if constexpr (std::floating_point<From>) {
         return float_in_integer_range<To>(value);
     } else if constexpr (std::floating_point<To>) {
@@ -82,6 +85,15 @@ template <Arithmetic To, Arithmetic From>
         return float_in_integer_range<From>(static_cast<To>(value));
     } else {
         return true;  // Số nguyên sang số nguyên luôn xác định (C++20: theo mô-đun).
+    }
+}
+
+template <Arithmetic To, Arithmetic From>
+[[nodiscard]] constexpr bool same_sign(const To converted, const From value) noexcept {
+    if constexpr (std::is_signed_v<To> != std::is_signed_v<From>) {
+        return (converted < To{}) == (value < From{});
+    } else {
+        return true;
     }
 }
 
@@ -96,13 +108,7 @@ template <Arithmetic To, Arithmetic From>
             return is_nan(converted);
         }
     }
-    if (static_cast<From>(converted) != value) {
-        return false;
-    }
-    if constexpr (std::is_signed_v<To> != std::is_signed_v<From>) {
-        return (converted < To{}) == (value < From{});
-    }
-    return true;
+    return static_cast<From>(converted) == value && same_sign(converted, value);
 }
 
 }  // namespace detail

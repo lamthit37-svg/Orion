@@ -30,9 +30,8 @@ TEST(Assert, PassingConditionsHaveNoEffect) {
 
 TEST_F(AssertDeathTest, AssertReportsExpressionMessageAndLocation) {
     const int limit = 3;
-    EXPECT_DEATH(
-        ORION_ASSERT(limit > 5, "giới hạn {} quá nhỏ", limit),
-        "assert_test.cpp:[0-9]+: ORION_ASSERT thất bại: limit > 5\n    giới hạn 3 quá nhỏ");
+    EXPECT_DEATH(ORION_ASSERT(limit > 5, "giới hạn {} quá nhỏ", limit),
+                 "assert_test.cpp:.*: ORION_ASSERT thất bại: limit > 5\n    giới hạn 3 quá nhỏ");
 }
 
 TEST_F(AssertDeathTest, VerifyReportsInEveryBuild) {

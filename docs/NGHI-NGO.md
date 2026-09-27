@@ -65,16 +65,6 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   `unexpected memory mapping` thì ghi giá trị `sysctl vm.mmap_rnd_bits`.
 - **Trạng thái:** mở.
 
-### NGHI-NGO-005 — CMake phát `/external:I` cho include SYSTEM với MSVC
-
-- **Mở:** 2026-09-27
-- **Khẳng định:** Với MSVC, target IMPORTED của vcpkg được include bằng `/external:I`, nên
-  `/external:W0` chặn được warning từ header ngoài mà không phải hạ `/W4 /WX`.
-- **Lý do nghi:** ARCH §9. Chưa có máy Windows trong phiên dựng.
-- **Cách kiểm:** job Windows của CI in `compile_commands.json` của preset `dev`; tìm `/external:I`
-  trên dòng biên dịch một file include libsodium.
-- **Trạng thái:** mở.
-
 ### NGHI-NGO-006 — Cờ MSVC tắt hợp nhất FMA
 
 - **Mở:** 2026-09-27
@@ -121,7 +111,8 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   - toolchain 3: xanh (NGHI-NGO-019);
   - toolchain 4, clang của NDK 29.0.14206865 (API mặc định 21): chỉ `__cpp_lib_to_chars` vắng,
     vì libc++ chưa đủ bản số thực; `features.cpp` thay assert đó bằng biên dịch thử bản số nguyên;
-  - toolchain 2 (clang-cl): chưa đo được vì lỗi cờ, xem ghi chú trong `cmake/orion_flags.cmake`;
+  - toolchain 2, clang-cl của LLVM cài sẵn trên runner `windows-2025`: xanh từ run 36314987582
+    (commit `eb71d84`), sau khi bỏ `/fp:precise` cho clang-cl;
   - toolchain 5: chưa chạy (NGHI-NGO-008).
 
 ### NGHI-NGO-010 — Điều khoản license hiện hành của FMOD
@@ -253,6 +244,20 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
 ---
 
 ## Đã đóng
+
+### NGHI-NGO-005 — CMake phát `/external:I` cho include SYSTEM với MSVC
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** Với MSVC, target IMPORTED của vcpkg được include bằng `/external:I`, nên
+  `/external:W0` chặn được warning từ header ngoài mà không phải hạ `/W4 /WX`.
+- **Lý do nghi:** ARCH §9. Chưa có máy Windows trong phiên dựng.
+- **Cách kiểm:** job Windows của CI in `compile_commands.json` của preset `dev`; tìm `/external:I`
+  trên dòng biên dịch một file include libsodium.
+- **Trạng thái:** đóng 2026-09-27.
+- **Bằng chứng:** CI run 36315453481, job `§8.2 windows: dev` (MSVC 14.51.36231): dòng biên dịch
+  `narrow_test.cpp` có `-external:ID:\a\Orion\Orion\out\build\dev\vcpkg_installed\x64-windows-orion\include
+  -external:W0` cho include của GoogleTest, cạnh `/W4 /WX`. Header của vcpkg vì vậy không bắt dự án
+  hạ cờ warning.
 
 ### NGHI-NGO-015 — clang 18 với libstdc++ 13 không có `std::expected`
 
