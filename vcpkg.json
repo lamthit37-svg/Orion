@@ -6,6 +6,7 @@
   "dependencies": [
     "benchmark",
     "gtest",
-    "libsodium"
+    "libsodium",
+    "zstd"
   ]
 }
