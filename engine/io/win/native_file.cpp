@@ -1,6 +1,8 @@
 // Tệp trên Windows: CreateFileW, ReadFile theo vị trí (OVERLAPPED trên handle đồng bộ), WriteFile,
-// FlushFileBuffers, MoveFileExW. Đường dẫn UTF-8 đổi sang UTF-16; đường dẫn dài được đổi sang dạng
-// tuyệt đối có tiền tố "\\?\" để vượt giới hạn MAX_PATH.
+// FlushFileBuffers. Đổi tên đè dùng ngữ nghĩa POSIX (FileRenameInfoEx) để thay được tệp đích đang
+// mở, như rename(2); MoveFileExW không làm được (CI run 36328657911 đo thấy commit thất bại khi tệp
+// đích còn handle đọc). Đường dẫn UTF-8 đổi sang UTF-16; đường dẫn dài được đổi sang dạng tuyệt đối
+// có tiền tố "\\?\" để vượt giới hạn MAX_PATH.
 
 #include "engine/io/detail/native_file.hpp"
 
@@ -13,9 +15,14 @@
 #include <bit>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <expected>
+#include <limits>
 #include <span>
 #include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 namespace orion::io::detail {
 namespace {
@@ -58,20 +65,32 @@ constexpr usize kLongPathThreshold = 248;
     return NativeFile{std::bit_cast<std::intptr_t>(handle)};
 }
 
-// UTF-8 sang UTF-16 (File::open đã kiểm UTF-8). Đường dẫn dài được làm tuyệt đối bằng
-// GetFullPathNameW rồi thêm "\\?\" (hoặc "\\?\UNC\" cho đường dẫn mạng).
-[[nodiscard]] Result<std::wstring> wide_path(const char* path) {
-    const int length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, nullptr, 0);
+// UTF-8 sang UTF-16 (File::open đã kiểm UTF-8).
+[[nodiscard]] Result<std::wstring> utf16(const std::string_view text) {
+    if (text.empty()) {
+        return std::wstring();
+    }
+    if (text.size() > static_cast<usize>(std::numeric_limits<int>::max())) {
+        return fail(ErrorCode::InvalidArgument, "io: đường dẫn quá dài");
+    }
+    const int length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, text.data(),
+                                           static_cast<int>(text.size()), nullptr, 0);
     if (length <= 0) {
         return fail(ErrorCode::InvalidArgument, "io: đường dẫn không đổi được sang UTF-16");
     }
     std::wstring wide(static_cast<usize>(length), L'\0');
-    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, wide.data(), length) !=
-        length) {
+    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, text.data(),
+                            static_cast<int>(text.size()), wide.data(), length) != length) {
         return fail(ErrorCode::InvalidArgument, "io: đường dẫn không đổi được sang UTF-16");
     }
-    wide.pop_back();
-    if (wide.size() < kLongPathThreshold || wide.starts_with(L"\\\\?\\")) {
+    return wide;
+}
+
+// Dạng tuyệt đối "\\?\" của một đường dẫn: GetFullPathNameW chuẩn hoá ('/' thành '\', ".", "..")
+// rồi thêm "\\?\", hoặc "\\?\UNC\" cho đường dẫn mạng. Đường dẫn đã có "\\?\" và đường dẫn thiết bị
+// "\\.\" giữ nguyên.
+[[nodiscard]] Result<std::wstring> verbatim_path(std::wstring wide) {
+    if (wide.starts_with(L"\\\\?\\")) {
         return wide;
     }
     const DWORD needed = GetFullPathNameW(wide.c_str(), 0, nullptr, nullptr);
@@ -84,10 +103,22 @@ constexpr usize kLongPathThreshold = 248;
         return windows_error(GetLastError(), "io: GetFullPathNameW thất bại");
     }
     full.resize(written);
+    if (full.starts_with(L"\\\\.\\")) {
+        return full;
+    }
     if (full.starts_with(L"\\\\")) {
         return L"\\\\?\\UNC\\" + full.substr(2);
     }
     return L"\\\\?\\" + full;
+}
+
+// Đường dẫn ngắn giữ nguyên; từ kLongPathThreshold trở lên đổi sang dạng "\\?\".
+[[nodiscard]] Result<std::wstring> wide_path(const char* path) {
+    Result<std::wstring> wide = utf16(path);
+    if (!wide || wide->size() < kLongPathThreshold) {
+        return wide;
+    }
+    return verbatim_path(std::move(*wide));
 }
 
 }  // namespace
@@ -174,14 +205,65 @@ Result<void> sync_file(const NativeFile file) noexcept {
     return {};
 }
 
+namespace {
+
+// Đổi tên đè theo ngữ nghĩa POSIX: thay được tệp đích kể cả khi nó đang mở với FILE_SHARE_DELETE,
+// handle cũ vẫn đọc tệp cũ, như rename(2). Trả false khi hệ điều hành hay hệ thống tệp không nhận
+// FileRenameInfoEx, để bên gọi lùi về MoveFileExW.
+[[nodiscard]] Result<bool> posix_rename(const std::wstring& from, const std::wstring& to) {
+    const HANDLE handle =
+        CreateFileW(from.c_str(), DELETE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                    nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (handle == INVALID_HANDLE_VALUE) {
+        return windows_error(GetLastError(), "io: không mở được tệp để đổi tên");
+    }
+    // FILE_RENAME_INFO kết thúc bằng mảng tên độ dài thay đổi; FileName[1] chừa sẵn chỗ cho ký tự
+    // kết thúc. Kiểu C chỉ gồm dữ liệu nên được tạo ngầm trong vùng byte (C++20, P0593).
+    const usize name_bytes = to.size() * sizeof(wchar_t);
+    std::vector<std::byte> storage(sizeof(FILE_RENAME_INFO) + name_bytes);
+    void* const raw = storage.data();
+    auto* const info = static_cast<FILE_RENAME_INFO*>(raw);
+    info->Flags = FILE_RENAME_FLAG_REPLACE_IF_EXISTS | FILE_RENAME_FLAG_POSIX_SEMANTICS;
+    info->RootDirectory = nullptr;
+    info->FileNameLength = static_cast<DWORD>(name_bytes);
+    std::memcpy(static_cast<void*>(&info->FileName[0]), to.data(), name_bytes);
+    const BOOL renamed = SetFileInformationByHandle(handle, FileRenameInfoEx, info,
+                                                    static_cast<DWORD>(storage.size()));
+    const DWORD error = GetLastError();
+    static_cast<void>(CloseHandle(handle));
+    if (renamed != 0) {
+        return true;
+    }
+    if (error == ERROR_INVALID_PARAMETER || error == ERROR_NOT_SUPPORTED ||
+        error == ERROR_INVALID_FUNCTION) {
+        return false;
+    }
+    return windows_error(error, "io: SetFileInformationByHandle thất bại");
+}
+
+}  // namespace
+
 Result<void> replace_file(const char* from, const char* to) noexcept {
     const Result<std::wstring> wide_from = wide_path(from);
     if (!wide_from) {
         return std::unexpected(wide_from.error());
     }
-    const Result<std::wstring> wide_to = wide_path(to);
+    Result<std::wstring> relative_to = utf16(to);
+    if (!relative_to) {
+        return std::unexpected(relative_to.error());
+    }
+    // Đích luôn ở dạng tuyệt đối "\\?\", để không phụ thuộc cách FILE_RENAME_INFO hiểu đường dẫn
+    // tương đối.
+    const Result<std::wstring> wide_to = verbatim_path(std::move(*relative_to));
     if (!wide_to) {
         return std::unexpected(wide_to.error());
+    }
+    const Result<bool> renamed = posix_rename(*wide_from, *wide_to);
+    if (!renamed) {
+        return std::unexpected(renamed.error());
+    }
+    if (*renamed) {
+        return {};
     }
     if (MoveFileExW(wide_from->c_str(), wide_to->c_str(),
                     MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) == 0) {

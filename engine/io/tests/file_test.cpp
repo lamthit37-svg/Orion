@@ -160,6 +160,16 @@ TEST(AtomicFileWriter, ReplacesTargetEvenWhileItIsOpenForReading) {
     EXPECT_EQ(read_all(*new_file), bytes_of("new content"));
 }
 
+// Đường dẫn tương đối theo thư mục làm việc; lần ghi thứ hai đổi tên đè lên tệp của lần đầu.
+TEST(AtomicFileWriter, ReplacesTargetGivenByRelativePath) {
+    const TempPath temp("", "relative.bin");
+    write_file(temp.path(), bytes_of("old"));
+    write_file(temp.path(), bytes_of("relative"));
+    const Result<File> file = File::open(temp.path());
+    ASSERT_TRUE(file.has_value());
+    EXPECT_EQ(read_all(*file), bytes_of("relative"));
+}
+
 TEST(AtomicFileWriter, DroppingWithoutCommitLeavesTargetUntouched) {
     const TempPath temp("data.bin");
     write_file(temp.path(), bytes_of("keep"));
