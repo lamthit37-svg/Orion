@@ -75,6 +75,7 @@ CHƠI chưa có.
   hạn.
 - `engine/net` (đang dựng): bitstream bit-packed, little-endian cho protocol
   (`docs/formats/protocol.md`, ADR 0004) — số nguyên theo khoảng, số thực lượng tử hoá, byte và chuỗi
-  có giới hạn; bên đọc là hàm toàn phần và buộc mỗi tin nhắn có đúng một cách mã hoá.
-- Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest, bitstream),
+  có giới hạn; bên đọc là hàm toàn phần và buộc mỗi tin nhắn có đúng một cách mã hoá. Địa chỉ IPv4 và
+  IPv6 kèm cổng: đọc chặt từ cấu hình, in theo dạng chuẩn RFC 5952.
+- Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest, bitstream, địa chỉ),
   `tools/run_fuzz.py` và job fuzz đêm; ở mọi preset khác ctest chạy lại corpus.
