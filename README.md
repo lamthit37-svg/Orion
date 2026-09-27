@@ -95,13 +95,15 @@ CHƠI chưa có.
   nhận theo gói bằng bitfield 32 gói, gửi lại theo RTT, cắt tin nhắn tới 32 KiB thành mảnh 1 KiB;
   bộ nhớ tin nhắn tin cậy là ngân sách byte khai trước, bên gửi đặt tin nhắn vào bộ đệm nhận của
   bên kia nên bên nhận chép thẳng, không cấp phát.
-- `game/shared` (đang dựng): protocol v1 trong `protocol/*.schema` — vào và rời thế giới, input di
-  chuyển (client chỉ gửi ý định, X.9) và trạng thái thực thể lượng tử hoá 1 cm, chat, sự kiện kinh
-  tế qua Redis Streams có khoá idempotency; test giữ id, kênh, bên gửi và byte trên dây tính tay
-  theo `docs/formats/protocol.md`. Code hỗ trợ của protocol sinh ra: mảng, chuỗi và byte có cỡ tối
-  đa nằm ngay trong tin nhắn (không cấp phát), kiểu mạnh cho tick, tick rút gọn 16 bit khôi phục
-  theo tick tham chiếu (ADR 0002) và id nhân bản (ADR 0006), bộ ghi và bộ đọc có lỗi "dính" để code
-  sinh ra là một dãy lệnh thẳng.
+- `game/shared` (đang dựng): tick 50 Hz (ADR 0002); di chuyển tất định dùng chung cho server và dự
+  đoán của client (chạy, nhảy, trọng lực, bám mặt đất, biên thế giới trùng khoảng của protocol), một
+  zone 5 500 thực thể mỗi tick khoảng 0,1 ms. Protocol v1 trong `protocol/*.schema` — vào và rời thế
+  giới, input di chuyển (client chỉ gửi ý định, X.9) và trạng thái thực thể lượng tử hoá 1 cm, chat,
+  sự kiện kinh tế qua Redis Streams có khoá idempotency; test giữ id, kênh, bên gửi và byte trên dây
+  tính tay theo `docs/formats/protocol.md`. Code hỗ trợ của protocol sinh ra: mảng, chuỗi và byte có
+  cỡ tối đa nằm ngay trong tin nhắn (không cấp phát), kiểu mạnh cho tick, tick rút gọn 16 bit khôi
+  phục theo tick tham chiếu (ADR 0002) và id nhân bản (ADR 0006), bộ ghi và bộ đọc có lỗi "dính" để
+  code sinh ra là một dãy lệnh thẳng.
 - `tools/codegen`: ngôn ngữ schema của protocol (`docs/formats/protocol.md`) và bộ sinh C++ (ADR
   0004). Codegen kiểm mọi luật của schema (tên, khoảng, lượng tử hoá, cỡ tối đa theo kênh, khai báo
   thừa) và báo `tệp:dòng:cột`; CMake sinh lại code vào `out/` khi schema hay codegen đổi
