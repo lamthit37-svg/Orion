@@ -206,8 +206,10 @@ def fix_file(root: pathlib.Path, path: str, clang_format: str | None) -> None:
     lines = [line.rstrip() for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n")]
     while lines and lines[-1] == "":
         lines.pop()
-    fixed = eol.join(lines) + eol if lines else ""
-    full.write_bytes(fixed.encode("utf-8"))
+    fixed = (eol.join(lines) + eol if lines else "").encode("utf-8")
+    # Chỉ ghi khi có đổi, để --fix không làm build tăng dần biên dịch lại tệp không đổi.
+    if fixed != raw:
+        full.write_bytes(fixed)
     if clang_format and is_cpp(path):
         subprocess.run([clang_format, "--style=file", "-i", path], cwd=root, check=True)
 
