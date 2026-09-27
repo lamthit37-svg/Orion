@@ -10,6 +10,7 @@
 // Đổi mô phỏng có chủ đích thì sinh lại golden rồi commit, ghi lý do trong commit (X.4):
 // `ORION_REPLAY_UPDATE=1 ctest --preset local -R tests/replay`.
 
+#include "engine/core/environment.hpp"
 #include "engine/core/types.hpp"
 #include "engine/math/random.hpp"
 #include "engine/math/scalar.hpp"
@@ -24,7 +25,6 @@
 #include <bit>
 #include <charconv>
 #include <cstddef>
-#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <ios>
@@ -212,8 +212,10 @@ constexpr std::array kScenarios = {
 // Thư mục golden trong cây nguồn, hay ORION_REPLAY_GOLDEN_DIR khi chạy ở nơi khác (thiết bị
 // Android, máy Mac: NGHI-NGO-034).
 [[nodiscard]] fs::path golden_path(const Scenario& scenario) {
-    const char* dir = std::getenv("ORION_REPLAY_GOLDEN_DIR");  // NOLINT(concurrency-mt-unsafe)
-    const fs::path base = dir != nullptr ? fs::path(dir) : fs::path(ORION_REPLAY_GOLDEN_DIR);
+    const std::optional<std::string> dir = core::environment_variable("ORION_REPLAY_GOLDEN_DIR");
+    // Giá trị là UTF-8 trên mọi nền tảng; path dựng từ u8string hiểu đúng như vậy cả trên Windows.
+    const fs::path base =
+        dir ? fs::path(std::u8string(dir->begin(), dir->end())) : fs::path(ORION_REPLAY_GOLDEN_DIR);
     return base / (std::string(scenario.name) + ".txt");
 }
 
@@ -287,8 +289,7 @@ void write_golden(const Scenario& scenario, const Trace& run) {
 }
 
 [[nodiscard]] bool update_requested() {
-    const char* flag = std::getenv("ORION_REPLAY_UPDATE");  // NOLINT(concurrency-mt-unsafe)
-    return flag != nullptr && std::string_view(flag) == "1";
+    return core::environment_variable("ORION_REPLAY_UPDATE") == "1";
 }
 
 class Replay : public ::testing::TestWithParam<Scenario> {};
