@@ -60,16 +60,18 @@ CHƠI chưa có.
   phiên, AEAD ChaCha20-Poly1305 với nonce lấy từ số thứ tự, băm mật khẩu Argon2id với chuỗi PHC
   được kiểm trước khi tới libsodium; so sánh thời gian hằng và bí mật tự xoá. Test theo vector của
   RFC 8032, 7748, 8439 và chuỗi Argon2id của bản cài đặt tham chiếu.
-- `engine/io` (đang dựng): đường dẫn ảo chung cho tệp rời và pak, tệp đọc theo vị trí và ghi
-  nguyên tử (tệp tạm, đẩy xuống đĩa, đổi tên đè) trên Windows, Linux, Android và Apple. Pak phiên
-  bản 1 (`docs/formats/pak.md`, ADR 0012): hash của header và index so với manifest trước khi phân
-  tích, mỗi entry nén Zstd riêng (có dictionary) và được băm trước khi giải nén; đọc từ nhiều luồng,
-  không cấp phát sau khi dành bộ đệm. Bộ ghi pak và huấn luyện dictionary chỉ có ở DEV và tool.
-  Manifest đã ký Ed25519 (`docs/formats/manifest.md`): người ký phải nằm trong danh sách khoá tin
-  cậy và chữ ký được kiểm trước khi đọc bản ghi pak; bộ ghi manifest chỉ có ở DEV và tool. VFS:
-  mount pak của manifest đã ký (kiểm cỡ và `index_hash` khi mount), mount sau che mount trước, đọc
-  từ nhiều luồng; thư mục tệp rời và pak ngoài manifest chỉ có ở DEV, và
-  `engine/io/tests/ship_api_check.cpp` giữ luật đó ở mọi preset bằng cách biên dịch với cấu hình
-  ship.
+- `engine/io`: đường dẫn ảo chung cho tệp rời và pak, tệp đọc theo vị trí và ghi nguyên tử (tệp tạm,
+  đẩy xuống đĩa, đổi tên đè); build và test trên Windows và Linux, build cho Android; bản Apple có
+  code nhưng chưa build lần nào (NGHI-NGO-032). Pak phiên bản 1 (`docs/formats/pak.md`, ADR 0012):
+  hash của header và index so với manifest trước khi phân tích, mỗi entry nén Zstd riêng (có
+  dictionary) và được băm trước khi giải nén; đọc từ nhiều luồng, không cấp phát sau khi dành bộ
+  đệm. Bộ ghi pak và huấn luyện dictionary chỉ có ở DEV và tool. Manifest đã ký Ed25519
+  (`docs/formats/manifest.md`): người ký phải nằm trong danh sách khoá tin cậy và chữ ký được kiểm
+  trước khi đọc bản ghi pak; bộ ghi manifest chỉ có ở DEV và tool. VFS: mount pak của manifest đã ký
+  (kiểm cỡ và `index_hash` khi mount), mount sau che mount trước, đọc từ nhiều luồng; thư mục tệp
+  rời và pak ngoài manifest chỉ có ở DEV, và `engine/io/tests/ship_api_check.cpp` giữ luật đó ở mọi
+  preset bằng cách biên dịch với cấu hình ship. Đọc bất đồng bộ: luồng `orion-io` đọc qua VFS theo
+  thứ tự gửi; luồng chính gửi và nhận không cấp phát, không chặn, và số yêu cầu chưa nhận có giới
+  hạn.
 - Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest), `tools/run_fuzz.py`
   và job fuzz đêm; ở mọi preset khác ctest chạy lại corpus.

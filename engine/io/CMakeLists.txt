@@ -1,7 +1,7 @@
 # engine/io (T1): tệp, pak, VFS, đọc bất đồng bộ (ARCH §2, §4.1). zstd chỉ được include ở đây
 # (ADR 0012).
 find_package(zstd CONFIG REQUIRED)
-orion_add_module(DEPS engine_core engine_crypto EXTERNAL zstd::libzstd TEST_DEPS engine_jobs)
+orion_add_module(DEPS engine_core engine_crypto engine_jobs EXTERNAL zstd::libzstd)
 # Pak hạt giống của fuzz, do tools/gen_pak_seeds.py viết độc lập theo docs/formats/pak.md sinh ra;
 # pak_seed_test.cpp đọc chúng.
 if(TARGET engine_io_tests)
