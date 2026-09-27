@@ -42,5 +42,8 @@ CHƠI chưa có.
 
 - Tài liệu nền, ADR 0001–0008 và sổ nghi ngờ.
 - Cổng kiểm `check_style`, `check_layers`, `check_tracked`, kèm unittest.
-- Khung CMake: preset của ARCH §6, toolchain và triplet vcpkg riêng, `tests/toolchain/features.cpp`
-  xanh trên toolchain 3 (clang 20, libstdc++ 14). Bốn toolchain còn lại chờ CI (NGHI-NGO-009).
+- Khung CMake: preset của ARCH §6, toolchain và triplet vcpkg riêng, `orion_add_module()`,
+  `tests/toolchain/features.cpp` (số đo từng toolchain ở NGHI-NGO-009).
+- CI GitHub Actions theo ARCH §8 (ADR 0009).
+- `engine/core`: kiểu số, macro nền tảng, `ORION_ASSERT`/`ORION_VERIFY`, `orion::narrow`, `Error`
+  và `Result`.

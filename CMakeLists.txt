@@ -8,4 +8,5 @@ include(orion_module)
 enable_testing()
 
 add_subdirectory(tools)
+add_subdirectory(engine)
 add_subdirectory(tests)
