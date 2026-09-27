@@ -60,5 +60,7 @@ CHƠI chưa có.
   phiên, AEAD ChaCha20-Poly1305 với nonce lấy từ số thứ tự, băm mật khẩu Argon2id với chuỗi PHC
   được kiểm trước khi tới libsodium; so sánh thời gian hằng và bí mật tự xoá. Test theo vector của
   RFC 8032, 7748, 8439 và chuỗi Argon2id của bản cài đặt tham chiếu.
+- `engine/io` (đang dựng): đường dẫn ảo chung cho tệp rời và pak, tệp đọc theo vị trí và ghi
+  nguyên tử (tệp tạm, đẩy xuống đĩa, đổi tên đè) trên Windows, Linux, Android và Apple.
 - Khung fuzz `tests/fuzz/` (target đầu tiên: chuỗi băm mật khẩu), `tools/run_fuzz.py` và job fuzz
   đêm; ở mọi preset khác ctest chạy lại corpus.

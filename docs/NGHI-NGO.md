@@ -301,6 +301,18 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   `linux-fuzz` (như `x64-windows-orion-asan` cho MSVC), rồi chạy lại fuzz đêm.
 - **Trạng thái:** mở.
 
+### NGHI-NGO-032 — Tệp của `engine/io` trên Apple
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** `engine/io/apple/native_file.cpp` build được với Apple clang và cho kết quả như
+  bản Linux ở `engine_io_tests`; `fcntl(F_FULLFSYNC)` đẩy dữ liệu xuống thiết bị lưu trữ mạnh hơn
+  `fsync` trên iOS và macOS, và hệ thống tệp không nhận lệnh này thì trả lỗi để code lùi về `fsync`.
+- **Lý do nghi:** CI chỉ build iOS khi bật tay (NGHI-NGO-008) và chưa chạy test trên Apple; lý do
+  dùng F_FULLFSYNC lấy từ tài liệu của Apple mà phiên dựng không đọc lại được.
+- **Cách kiểm:** chạy `engine_io_tests` trên máy Mac (preset của Apple clang); đọc trang man
+  `fsync(2)` và `fcntl(2)` của macOS.
+- **Trạng thái:** mở.
+
 ---
 
 ## Đã đóng
