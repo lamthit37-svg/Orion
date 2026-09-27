@@ -32,6 +32,11 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
 - **Cách kiểm:** `cmake --preset linux` (vcpkg cài theo manifest), tương tự cho `dev`,
   `android-arm64`, `ios-arm64`; đọc log `vcpkg install` trong CI.
 - **Trạng thái:** mở. Đóng từng phần: mỗi port build xanh thì ghi dòng bằng chứng vào đây.
+  Đã xanh: gtest 1.18.0, benchmark 1.9.5, libsodium 1.0.22, zstd 1.5.7 với `x64-linux-orion` (job
+  `§8.3 linux`, `linux-tsan`, `coverage`, `§8.4 clang-tidy`), `arm64-linux-orion` (`§8.3
+  linux-arm64`), `x64-windows-orion` (`§8.2 windows` `dev`, `ubsan`), `x64-windows-orion-asan`
+  (`§8.2 windows` `asan`) và `arm64-android-orion` (`§8.7 android-arm64`), cùng CI run 36332765141
+  (commit `0580b42`). `arm64-ios-orion` chưa build: job iOS chỉ chạy khi bật tay (NGHI-NGO-008).
 
 ### NGHI-NGO-002 — Thư viện ngoài build được khi tắt exception và RTTI
 
@@ -237,7 +242,11 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   1.0.22: CI run 36327515893 (commit `02c21f3`) xanh ở mọi job — port build bằng autotools trên
   Linux x64, Linux arm64 và Android, bằng msbuild trên Windows; test của `engine/crypto`, gồm vector
   RFC 8032, 7748, 8439 và chuỗi Argon2id của argon2-cffi, xanh ở `linux`, `linux-tsan`, `coverage`,
-  `linux-arm64` và `windows` `dev`, `asan`, `ubsan`; job fuzz (run 36327518613) xanh.
+  `linux-arm64` và `windows` `dev`, `asan`, `ubsan`; job fuzz (run 36327518613) xanh. zstd 1.5.7:
+  CI run 36332765141 (commit `0580b42`) xanh ở mọi job — port build bằng CMake cho cả năm triplet
+  dưới đây; test pak của `engine/io` (đọc entry Zstd, có dictionary) xanh ở `linux`, `linux-tsan`,
+  `coverage`, `linux-arm64` và `windows` `dev`, `asan`, `ubsan`; clang-tidy chạy với header của
+  1.5.7 (khác 1.5.5 ở chỗ khai báo `ZSTD_getErrorCode`, commit `0580b42`).
 
 ### NGHI-NGO-028 — Bit kết quả của `engine/math` giống nhau trên arm64
 
@@ -271,23 +280,6 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   bản SIMD ở preset `profile` trên máy tham chiếu (ADR 0005); bản SIMD phải giữ đúng thứ tự phép
   tính để golden test của `engine/math` không đổi.
 - **Trạng thái:** mở.
-
-### NGHI-NGO-030 — Job system đúng trên mô hình bộ nhớ yếu của arm64
-
-- **Mở:** 2026-09-27
-- **Khẳng định:** Deque Chase–Lev, eventcount và `JobCounter` của `engine/jobs` không làm mất, không
-  chạy lặp job và không treo trên arm64 (Android, Apple Silicon), nơi CPU được phép sắp lại thứ tự
-  truy cập bộ nhớ nhiều hơn x64.
-- **Lý do nghi:** Thứ tự bộ nhớ theo bản đã chứng minh của Lê và cộng sự (PPoPP 2013), có lý do
-  từng dòng, và TSan xanh. Nhưng x64 giữ thứ tự ghi (TSO) nên che phần lớn lỗi thứ tự, TSan không
-  mô hình hàng rào (fence), và CI chưa chạy test trên arm64.
-- **Cách kiểm:** chạy `engine_jobs_tests --gtest_repeat=1000` trên thiết bị Android arm64 và trên
-  Mac Apple Silicon, hoặc trên runner Linux arm64 của CI.
-- **Trạng thái:** mở. Đã đo trên x64: 300 lượt lặp ở preset `local`, 50 lượt dưới TSan, xanh.
-  Trên Linux arm64 (CI run 36323827016, runner `ubuntu-24.04-arm`): một lượt, xanh; job CI
-  `linux-arm64` từ nay lặp `engine_jobs_tests` 200 lượt mỗi lần chạy (18 test mỗi lượt, bỏ death
-  test). Đã xanh: CI run 36324283492 và 36327515893, tổng 400 lượt. Đóng khi tổng số lượt trên
-  arm64 đạt 1000 như cách kiểm.
 
 ### NGHI-NGO-031 — Sanitizer thấy lỗi bộ nhớ bên trong libsodium
 
@@ -451,6 +443,26 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   `--header-filter='.*/(engine|game|tools|tests)/.*'` báo 20 phát hiện trong `quat.hpp`. Từ nay
   `run_tidy.py` đọc regex trong `.clang-tidy` và truyền lại qua `--header-filter`; lần chạy đầu
   tìm ra 13 phát hiện đã bị giấu trong header của `engine/core`, sửa ở commit `c9b75f2`.
+
+### NGHI-NGO-030 — Job system đúng trên mô hình bộ nhớ yếu của arm64
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** Deque Chase–Lev, eventcount và `JobCounter` của `engine/jobs` không làm mất, không
+  chạy lặp job và không treo trên arm64 (Android, Apple Silicon), nơi CPU được phép sắp lại thứ tự
+  truy cập bộ nhớ nhiều hơn x64.
+- **Lý do nghi:** Thứ tự bộ nhớ theo bản đã chứng minh của Lê và cộng sự (PPoPP 2013), có lý do
+  từng dòng, và TSan xanh. Nhưng x64 giữ thứ tự ghi (TSO) nên che phần lớn lỗi thứ tự, TSan không
+  mô hình hàng rào (fence), và CI chưa chạy test trên arm64.
+- **Cách kiểm:** chạy `engine_jobs_tests --gtest_repeat=1000` trên thiết bị Android arm64 và trên
+  Mac Apple Silicon, hoặc trên runner Linux arm64 của CI.
+- **Trạng thái:** đóng 2026-09-27 cho Linux arm64; Android và Apple Silicon chưa chạy trên thiết
+  bị thật (cách kiểm cho phép runner Linux arm64 thay cho chúng).
+- **Bằng chứng:** trên x64: 300 lượt lặp ở preset `local`, 50 lượt dưới TSan, xanh. Trên Linux
+  arm64 (runner `ubuntu-24.04-arm`): một lượt ở CI run 36323827016; rồi bước "Lặp test job system"
+  của job `§8.3 linux-arm64` chạy `engine_jobs_tests --gtest_repeat=200 --gtest_filter=-*DeathTest*`
+  (18 test mỗi lượt) và xanh ở CI run 36324283492, 36327515893, 36328147965, 36328657911,
+  36330676036, 36332192303, 36332765141 và 36334195631: tổng 1600 lượt, không lượt nào hỏng hay
+  treo. Log của run 36334195631 có đúng 200 dòng `[  PASSED  ] 18 tests.` và không dòng FAILED nào.
 
 ### NGHI-NGO-033 — Nhiều luồng dùng chung một `ZSTD_DDict`
 
