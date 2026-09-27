@@ -46,4 +46,6 @@ CHƠI chưa có.
   `tests/toolchain/features.cpp` (số đo từng toolchain ở NGHI-NGO-009).
 - CI GitHub Actions theo ARCH §8 (ADR 0009).
 - `engine/core`: kiểu số, macro nền tảng, `ORION_ASSERT`/`ORION_VERIFY`, `orion::narrow`, `Error`
-  và `Result`, `Arena`; bộ đếm cấp phát cho test (X.7).
+  và `Result`, `Arena`, `Handle`/`SlotMap`, đọc ghi byte little-endian, UTF-8, thời gian và đồng
+  hồ tiêm được, hàng đợi không khoá, log bất đồng bộ (text và JSON lines); bộ đếm cấp phát cho test
+  (X.7).

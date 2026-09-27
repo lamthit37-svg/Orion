@@ -53,25 +53,33 @@ struct Lead {
 
 }  // namespace
 
+usize utf8_sequence_length(const std::string_view text, const usize offset) noexcept {
+    const Lead lead = classify(byte_at(text, offset));
+    if (lead.length == 0 || text.size() - offset < lead.length) {
+        return 0;
+    }
+    if (lead.length > 1) {
+        const u8 second = byte_at(text, offset + 1);
+        if (second < lead.second_min || second > lead.second_max) {
+            return 0;
+        }
+        for (usize k = 2; k < lead.length; ++k) {
+            if (!is_continuation(byte_at(text, offset + k))) {
+                return 0;
+            }
+        }
+    }
+    return lead.length;
+}
+
 bool is_valid_utf8(const std::string_view text) noexcept {
     usize i = 0;
     while (i < text.size()) {
-        const Lead lead = classify(byte_at(text, i));
-        if (lead.length == 0 || text.size() - i < lead.length) {
+        const usize length = utf8_sequence_length(text, i);
+        if (length == 0) {
             return false;
         }
-        if (lead.length > 1) {
-            const u8 second = byte_at(text, i + 1);
-            if (second < lead.second_min || second > lead.second_max) {
-                return false;
-            }
-            for (usize k = 2; k < lead.length; ++k) {
-                if (!is_continuation(byte_at(text, i + k))) {
-                    return false;
-                }
-            }
-        }
-        i += lead.length;
+        i += length;
     }
     return true;
 }
@@ -96,6 +104,22 @@ std::string_view utf8_truncate(const std::string_view text, const usize max_byte
         --end;
     }
     return text.substr(0, end);
+}
+
+std::string_view utf8_drop_incomplete_tail(const std::string_view text) noexcept {
+    // Tìm byte mở đầu của điểm mã cuối cùng: lùi qua tối đa 3 byte nối.
+    usize lead = text.size();
+    for (usize back = 1; back <= 4 && back <= text.size(); ++back) {
+        if (!is_continuation(byte_at(text, text.size() - back))) {
+            lead = text.size() - back;
+            break;
+        }
+    }
+    if (lead == text.size()) {
+        return text;  // Toàn byte nối hoặc rỗng: không có điểm mã dở dang nào để bỏ.
+    }
+    const usize needed = classify(byte_at(text, lead)).length;
+    return needed > text.size() - lead ? text.substr(0, lead) : text;
 }
 
 }  // namespace orion::core

@@ -99,6 +99,26 @@ TEST(Utf8, MatchesReferenceOnGeneratedBytes) {
     }
 }
 
+TEST(Utf8, SequenceLengthFindsEachCodePoint) {
+    const std::string_view text = "aĐ中\xF0\x9F\x98\x80\xFF";
+    EXPECT_EQ(utf8_sequence_length(text, 0), 1U);
+    EXPECT_EQ(utf8_sequence_length(text, 1), 2U);
+    EXPECT_EQ(utf8_sequence_length(text, 3), 3U);
+    EXPECT_EQ(utf8_sequence_length(text, 6), 4U);
+    EXPECT_EQ(utf8_sequence_length(text, 10), 0U) << "0xFF không mở đầu điểm mã nào";
+    EXPECT_EQ(utf8_sequence_length(text, 2), 0U) << "byte nối không mở đầu điểm mã";
+    EXPECT_EQ(utf8_sequence_length("\xE4\xB8", 0), 0U) << "bị cắt giữa chừng";
+}
+
+TEST(Utf8, DropIncompleteTailKeepsWholeCodePoints) {
+    EXPECT_EQ(utf8_drop_incomplete_tail(""), "");
+    EXPECT_EQ(utf8_drop_incomplete_tail("abc"), "abc");
+    EXPECT_EQ(utf8_drop_incomplete_tail("a\xE4\xB8\xAD"), "a\xE4\xB8\xAD");
+    EXPECT_EQ(utf8_drop_incomplete_tail("a\xE4\xB8"), "a");
+    EXPECT_EQ(utf8_drop_incomplete_tail("a\xF0\x9F\x98"), "a");
+    EXPECT_EQ(utf8_drop_incomplete_tail("a\xC3"), "a");
+}
+
 TEST(Utf8, LengthCountsCodePoints) {
     EXPECT_EQ(utf8_length(""), 0U);
     EXPECT_EQ(utf8_length("abc"), 3U);
