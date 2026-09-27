@@ -25,6 +25,9 @@ Windows, Linux và macOS của GitHub là nơi duy nhất đo được chúng m�
    tới khi người quyết bật hẳn (ARCH §8 mục 8, NGHI-NGO-008).
 5. Mục của ARCH §8 chưa có gì để chạy (benchmark, fuzz đêm, ảnh vàng, ship đêm, migration) được
    thêm vào workflow cùng commit với code mà nó kiểm.
+6. Test Linux chạy thêm trên runner arm64 của GitHub (`ubuntu-24.04-arm`, preset `linux-arm64`):
+   trước khi có thiết bị Android và Mac, đây là nơi duy nhất đo được tất định số thực (X.11) và
+   thứ tự bộ nhớ của code nhiều luồng trên arm64, kiến trúc có mô hình bộ nhớ yếu hơn x64.
 
 ## Hệ quả
 

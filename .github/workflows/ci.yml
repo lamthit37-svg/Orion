@@ -54,6 +54,27 @@ jobs:
           triplet: x64-linux-orion
       - run: cmake --workflow --preset ${{ matrix.preset }}
 
+  linux-arm64:
+    name: "§8.3 linux-arm64"
+    needs: gate
+    # Tất định số thực (X.11) và thứ tự bộ nhớ của job system trên arm64 khi chưa có thiết bị
+    # (NGHI-NGO-028, NGHI-NGO-030); ADR 0009 mục 6.
+    runs-on: ubuntu-24.04-arm
+    env:
+      # vcpkg trên arm64 dùng cmake và ninja có sẵn trong PATH (bản pip của setup-orion).
+      VCPKG_FORCE_SYSTEM_BINARIES: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: clang 20 và libstdc++ 14 (NGHI-NGO-015)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev
+      - uses: ./.github/actions/setup-orion
+        with:
+          triplet: arm64-linux-orion
+      - run: cmake --workflow --preset linux-arm64
+
   coverage:
     name: "§8.3 coverage: llvm-cov"
     needs: gate

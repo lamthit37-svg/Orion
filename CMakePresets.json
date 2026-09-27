@@ -144,6 +144,17 @@
       }
     },
     {
+      "name": "linux-arm64",
+      "displayName": "linux-arm64 — clang, RelWithDebInfo trên máy Linux arm64",
+      "inherits": "linux-base",
+      "$comment": "Chạy test trên arm64 khi chưa có thiết bị: tất định số thực và mô hình bộ nhớ yếu (NGHI-NGO-028, NGHI-NGO-030).",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "VCPKG_TARGET_TRIPLET": "arm64-linux-orion",
+        "VCPKG_HOST_TRIPLET": "arm64-linux-orion"
+      }
+    },
+    {
       "name": "android-arm64",
       "displayName": "android-arm64 — clang NDK, arm64-v8a",
       "inherits": "base",
@@ -180,6 +191,7 @@
     { "name": "linux-tsan", "configurePreset": "linux-tsan" },
     { "name": "linux-fuzz", "configurePreset": "linux-fuzz" },
     { "name": "linux-coverage", "configurePreset": "linux-coverage" },
+    { "name": "linux-arm64", "configurePreset": "linux-arm64" },
     { "name": "android-arm64", "configurePreset": "android-arm64" },
     { "name": "ios-arm64", "configurePreset": "ios-arm64", "configuration": "Debug" }
   ],
@@ -201,6 +213,7 @@
     { "name": "linux", "inherits": "test-base", "configurePreset": "linux" },
     { "name": "linux-tsan", "inherits": "test-base", "configurePreset": "linux-tsan" },
     { "name": "linux-fuzz", "inherits": "test-base", "configurePreset": "linux-fuzz" },
+    { "name": "linux-arm64", "inherits": "test-base", "configurePreset": "linux-arm64" },
     {
       "name": "linux-coverage",
       "inherits": "test-base",
@@ -233,6 +246,14 @@
         { "type": "configure", "name": "linux-tsan" },
         { "type": "build", "name": "linux-tsan" },
         { "type": "test", "name": "linux-tsan" }
+      ]
+    },
+    {
+      "name": "linux-arm64",
+      "steps": [
+        { "type": "configure", "name": "linux-arm64" },
+        { "type": "build", "name": "linux-arm64" },
+        { "type": "test", "name": "linux-arm64" }
       ]
     }
   ]

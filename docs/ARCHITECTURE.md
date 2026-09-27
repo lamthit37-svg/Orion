@@ -407,13 +407,14 @@ Mỗi mục là một file `docs/adr/NNNN-ten.md`. Đây là những thứ mà l
 | `linux-tsan` | clang, `-fsanitize=thread` | race ở server, jobs, net |
 | `linux-fuzz` | clang, libFuzzer, ASan, UBSan cho mọi code | chạy fuzz (CLAUDE.md X.4, X.16.9) |
 | `linux-coverage` | clang, Debug, `-fprofile-instr-generate` | coverage bằng llvm-cov trong CI |
+| `linux-arm64` | clang trên máy Linux arm64 | test trên arm64 trong CI (ADR 0009) |
 | `android-arm64` | clang của NDK, gọi từ Gradle | client Android |
 | `ios-arm64` | Apple clang, generator Xcode, chỉ trên Mac | client iOS |
 
 Workflow preset:
 
 - `dev` — configure, build, test với preset `dev`.
-- `linux`, `linux-tsan` — như `dev`, cho preset cùng tên; CI và WSL2 dùng.
+- `linux`, `linux-tsan`, `linux-arm64` — như `dev`, cho preset cùng tên; CI và WSL2 dùng.
 - `ship-win64` — configure `ship`, rồi build target `cook_win64` và `stage_play`. Được thêm vào
   `CMakePresets.json` cùng commit với hai target đó.
 
@@ -459,7 +460,7 @@ Tên target (hiến pháp IV.1):
 1. Cổng kiểm — chạy đầu tiên vì nhanh nhất.
 2. Windows: build và test preset `dev`; build và test preset `asan`; test ảnh vàng trên WARP.
 3. Linux: build server, shared, tool; test; coverage bằng llvm-cov; golden replay; test migration
-   trên PostgreSQL thật; TSan khi đã đo được (§9).
+   trên PostgreSQL thật; TSan khi đã đo được (§9). Test chạy cả trên runner arm64 (ADR 0009).
 4. clang-tidy trên compile database của preset `dev` và `linux`.
 5. Benchmark trên một runner cố định, so với baseline; chậm hơn 5% thì chặn (CLAUDE.md X.8).
 6. Fuzz: chạy mỗi đêm, mỗi target một khoảng cố định, corpus được tích luỹ.
