@@ -28,6 +28,11 @@ class TrackedTest(FakeRepo):
         self.write(".vs/settings.json", "{}\n")
         self.assertEqual(self.run_gate(), (0, []))
 
+    def test_user_presets_are_intentionally_ignored(self) -> None:
+        self.write(".gitignore", "CMakeUserPresets.json\n")
+        self.write("CMakeUserPresets.json", "{}\n")
+        self.assertEqual(self.run_gate(), (0, []))
+
     def test_force_added_file_is_not_reported(self) -> None:
         self.write(".gitignore", "*.json\n")
         self.write("CMakePresets.json", "{}\n")

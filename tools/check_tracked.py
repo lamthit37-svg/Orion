@@ -29,6 +29,8 @@ SOURCE_SUFFIXES = gatelib.CPP_SUFFIXES | frozenset(
 SOURCE_NAMES = frozenset({"CMakeLists.txt", "Dockerfile", "CMakePresets.json"})
 # Thư mục ẩn ở gốc là của editor hoặc công cụ cục bộ, cố ý bị bỏ qua; riêng .github là nguồn.
 KEPT_HIDDEN = frozenset({".github"})
+# Tệp cấu hình riêng từng máy, .gitignore cố ý bỏ qua (ARCH §2).
+INTENTIONALLY_IGNORED = frozenset({"CMakeUserPresets.json"})
 
 
 def candidate_files(root: pathlib.Path) -> list[str]:
@@ -44,8 +46,11 @@ def candidate_files(root: pathlib.Path) -> list[str]:
         )
         for name in filenames:
             suffix = pathlib.PurePosixPath(name).suffix
+            rel = (rel_dir / name).as_posix()
+            if rel in INTENTIONALLY_IGNORED:
+                continue
             if suffix in SOURCE_SUFFIXES or name in SOURCE_NAMES:
-                found.append((rel_dir / name).as_posix())
+                found.append(rel)
     return sorted(found)
 
 
