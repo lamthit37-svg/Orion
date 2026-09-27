@@ -247,3 +247,38 @@ function(_orion_module_tests target rel exceptions_flag test_deps test_external)
         endif()
     endif()
 endfunction()
+
+# orion_add_fuzz_target(<tên> DEPS <module>...)
+#
+# Target fuzz_<tên> từ tests/fuzz/<tên>.cpp, corpus hạt giống ở tests/fuzz/corpus/<tên>/ (CLAUDE.md
+# X.4). Khi ORION_FUZZ bật (preset linux-fuzz) target link libFuzzer và fuzz thật bằng
+# tools/run_fuzz.py. Ở mọi preset khác nó link tests/fuzz/support/replay_main.cpp: không fuzz, chỉ
+# chạy lại từng tệp corpus, để crash đã sửa không quay lại trên cả năm toolchain. ctest chạy lại
+# corpus ở mọi preset.
+function(orion_add_fuzz_target name)
+    cmake_parse_arguments(PARSE_ARGV 1 arg "" "" "DEPS")
+    if(arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "orion_add_fuzz_target: tham số lạ ${arg_UNPARSED_ARGUMENTS}")
+    endif()
+    set(target fuzz_${name})
+    set(corpus "${CMAKE_CURRENT_SOURCE_DIR}/corpus/${name}")
+    file(GLOB corpus_files CONFIGURE_DEPENDS "${corpus}/*")
+    if(NOT corpus_files)
+        message(FATAL_ERROR "${target}: corpus hạt giống ${corpus} rỗng hoặc không có")
+    endif()
+    add_executable(${target} "${CMAKE_CURRENT_SOURCE_DIR}/${name}.cpp")
+    orion_apply_flags(${target})
+    target_link_libraries(${target} PRIVATE ${arg_DEPS})
+    set(replay_args ${corpus_files})
+    if(ORION_FUZZ)
+        # orion_apply_flags đã thêm fuzzer-no-link; cờ này link thêm main của libFuzzer.
+        target_link_options(${target} PRIVATE -fsanitize=fuzzer)
+        list(PREPEND replay_args "-artifact_prefix=${CMAKE_CURRENT_BINARY_DIR}/${name}-")
+    else()
+        target_sources(${target} PRIVATE "${PROJECT_SOURCE_DIR}/tests/fuzz/support/replay_main.cpp")
+    endif()
+    if(NOT CMAKE_CROSSCOMPILING)
+        add_test(NAME "tests/fuzz:${name}" COMMAND ${target} ${replay_args})
+        set_tests_properties("tests/fuzz:${name}" PROPERTIES TIMEOUT 120)
+    endif()
+endfunction()

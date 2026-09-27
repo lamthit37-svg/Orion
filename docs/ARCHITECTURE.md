@@ -166,6 +166,7 @@ EngineGAME/
 │   ├── check_tracked.py — tệp nguồn bị .gitignore nuốt
 │   ├── gatelib.py — phần dùng chung của ba cổng trên
 │   ├── run_tidy.py — chạy clang-tidy bản ghim trên compile database (X.1)
+│   ├── run_fuzz.py — chạy fuzz target như job fuzz đêm của CI (X.4, X.16.9)
 │   ├── check_coverage.py — ngưỡng coverage dòng của CLAUDE.md X.4, đo bằng llvm-cov
 │   ├── gen_math_reference.py — bảng giá trị làm tròn đúng cho test độ chính xác của engine/math
 │   ├── tests/ — unittest của các cổng kiểm, chạy trong ctest
@@ -179,7 +180,7 @@ EngineGAME/
 ├── tests/ — kiểm thử liên module
 │   ├── toolchain/ — features.cpp: static_assert từng feature-test macro
 │   ├── replay/ — golden replay cho game/shared
-│   ├── fuzz/ — target libFuzzer và corpus/
+│   ├── fuzz/ — target libFuzzer, corpus/ hạt giống, support/ (main chạy lại corpus)
 │   └── soak/ — kịch bản bot swarm
 │
 ├── deploy/
@@ -414,7 +415,8 @@ Mỗi mục là một file `docs/adr/NNNN-ten.md`. Đây là những thứ mà l
 Workflow preset:
 
 - `dev` — configure, build, test với preset `dev`.
-- `linux`, `linux-tsan`, `linux-arm64` — như `dev`, cho preset cùng tên; CI và WSL2 dùng.
+- `linux`, `linux-tsan`, `linux-fuzz`, `linux-arm64` — như `dev`, cho preset cùng tên; CI và WSL2
+  dùng.
 - `ship-win64` — configure `ship`, rồi build target `cook_win64` và `stage_play`. Được thêm vào
   `CMakePresets.json` cùng commit với hai target đó.
 
@@ -463,7 +465,9 @@ Tên target (hiến pháp IV.1):
    trên PostgreSQL thật; TSan khi đã đo được (§9). Test chạy cả trên runner arm64 (ADR 0009).
 4. clang-tidy trên compile database của preset `dev` và `linux`.
 5. Benchmark trên một runner cố định, so với baseline; chậm hơn 5% thì chặn (CLAUDE.md X.8).
-6. Fuzz: chạy mỗi đêm, mỗi target một khoảng cố định, corpus được tích luỹ.
+6. Fuzz: chạy mỗi đêm, mỗi target một khoảng cố định, corpus được tích luỹ (`fuzz.yml`,
+   `tools/run_fuzz.py`, mỗi target 10 phút). Ở mọi preset khác, ctest chạy lại corpus hạt giống
+   qua một `main` thay libFuzzer.
 7. Android: build preset `android-arm64`.
 8. macOS: build iOS, khi đã có runner Mac.
 9. Ship: mỗi đêm dựng `out/play/` cho mọi nền tảng, rồi chạy smoke test bằng bot vào cụm staging.

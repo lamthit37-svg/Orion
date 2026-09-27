@@ -1,0 +1,57 @@
+# Fuzz mỗi đêm (ARCH §8 mục 6, CLAUDE.md X.4): mọi fuzz target chạy một khoảng cố định bằng
+# tools/run_fuzz.py, trên corpus tích luỹ qua các đêm (cache của Actions) cộng corpus hạt giống trong
+# tests/fuzz/corpus/. Crash làm job đỏ; libFuzzer in input gây lỗi dạng base64 trong log.
+name: fuzz
+
+on:
+  schedule:
+    # 19:37 UTC là 02:37 giờ Việt Nam; phút lẻ để tránh đầu giờ, khi runner đông nhất.
+    - cron: "37 19 * * *"
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: Số giây fuzz cho mỗi target
+        type: number
+        default: 600
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz
+  cancel-in-progress: false
+
+jobs:
+  fuzz:
+    name: "§8.6 fuzz: linux-fuzz"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      FUZZ_SECONDS: ${{ inputs.seconds || 600 }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: clang 20, libstdc++ 14 (NGHI-NGO-015) và autotools cho port libsodium (ADR 0011)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev \
+            autoconf automake libtool pkg-config
+      - uses: ./.github/actions/setup-orion
+        with:
+          triplet: x64-linux-orion
+      # Build, rồi ctest: test unit dưới ASan và UBSan, và corpus hạt giống chạy qua libFuzzer.
+      - run: cmake --workflow --preset linux-fuzz
+      - name: Corpus tích luỹ của các đêm trước
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: out/fuzz/corpus
+          key: fuzz-corpus-${{ github.run_id }}
+          restore-keys: fuzz-corpus-
+      - name: Fuzz mọi target
+        run: python tools/run_fuzz.py -p out/build/linux-fuzz --seconds "$FUZZ_SECONDS"
+      - name: Lưu corpus cho đêm sau, kể cả khi có crash
+        if: always()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: out/fuzz/corpus
+          key: fuzz-corpus-${{ github.run_id }}

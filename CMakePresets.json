@@ -249,6 +249,14 @@
       ]
     },
     {
+      "name": "linux-fuzz",
+      "steps": [
+        { "type": "configure", "name": "linux-fuzz" },
+        { "type": "build", "name": "linux-fuzz" },
+        { "type": "test", "name": "linux-fuzz" }
+      ]
+    },
+    {
       "name": "linux-arm64",
       "steps": [
         { "type": "configure", "name": "linux-arm64" },

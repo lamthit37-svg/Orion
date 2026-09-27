@@ -283,6 +283,18 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   Trên Linux arm64 (CI run 36323827016, runner `ubuntu-24.04-arm`): một lượt, xanh; job CI
   `linux-arm64` từ nay lặp `engine_jobs_tests` 200 lượt mỗi lần chạy.
 
+### NGHI-NGO-031 — Sanitizer thấy lỗi bộ nhớ bên trong libsodium
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** Fuzz và các preset sanitizer phát hiện được lỗi bộ nhớ hay UB bên trong
+  libsodium khi nó xử lý dữ liệu từ ngoài (chuỗi băm mật khẩu, gói AEAD, chữ ký, khoá công khai).
+- **Lý do nghi:** Triplet `x64-linux-orion` build dependency không có cờ sanitizer, nên ASan và
+  UBSan chỉ instrument code của dự án; libsodium đọc quá vùng nhớ chỉ lộ ra nếu gây SEGV. Fuzz
+  target `crypto_password_hash` có gọi bộ giải mã PHC của libsodium, nhưng ở dạng chưa instrument.
+- **Cách kiểm:** thêm triplet build dependency với `-fsanitize=address,undefined` cho preset
+  `linux-fuzz` (như `x64-windows-orion-asan` cho MSVC), rồi chạy lại fuzz đêm.
+- **Trạng thái:** mở.
+
 ---
 
 ## Đã đóng

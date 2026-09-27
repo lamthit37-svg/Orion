@@ -96,6 +96,8 @@ CheckOptions:
   readability-identifier-naming.TypedefCase: CamelCase
   readability-identifier-naming.TypeAliasIgnoredRegexp: '^([iu](8|16|32|64)|f(32|64)|usize|isize|value_type|size_type|difference_type|reference|const_reference|pointer|const_pointer|iterator|const_iterator|element_type|type)$'
   readability-identifier-naming.FunctionCase: lower_case
+  # Tên hàm vào của fuzz target do libFuzzer quy định (tests/fuzz/).
+  readability-identifier-naming.FunctionIgnoredRegexp: '^LLVMFuzzerTestOneInput$'
   readability-identifier-naming.MethodCase: lower_case
   readability-identifier-naming.ParameterCase: lower_case
   readability-identifier-naming.VariableCase: lower_case

@@ -1,5 +1,6 @@
-# CI tối thiểu của ARCH §8. Mỗi job ghi số mục của §8 mà nó thực hiện. Mục chưa có gì để chạy
-# (benchmark, fuzz đêm, ảnh vàng, ship đêm) được thêm cùng commit với code mà nó kiểm.
+# CI tối thiểu của ARCH §8. Mỗi job ghi số mục của §8 mà nó thực hiện. Fuzz đêm (mục 6) nằm ở
+# fuzz.yml. Mục chưa có gì để chạy (benchmark, ảnh vàng, ship đêm) được thêm cùng commit với code mà
+# nó kiểm.
 name: ci
 
 on:

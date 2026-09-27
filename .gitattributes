@@ -23,6 +23,8 @@
 *.ttf binary
 *.otf binary
 *.pak binary
+# Corpus fuzz là dãy byte thô: không đổi xuống dòng, kể cả tệp trông như chữ.
+tests/fuzz/corpus/** binary
 
 # Asset nguồn trong content/ đi qua Git LFS (ARCH §2).
 content/**/*.png filter=lfs diff=lfs merge=lfs -text
