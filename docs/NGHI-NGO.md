@@ -232,8 +232,11 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   bằng vcpkg ở baseline của `vcpkg.json`.
 - **Trạng thái:** mở; đóng từng dependency khi CI xanh với nó. Đã xanh: gtest 1.18.0 và
   benchmark 1.9.5, CI run 36317622896 (commit `406cd3a`): job `§8.3 linux`, `linux-tsan`,
-  `coverage`, `§8.2 windows` ở cả ba preset `dev`, `asan`, `ubsan`, mỗi job 63/63 test. Chờ CI:
-  libsodium 1.0.22.
+  `coverage`, `§8.2 windows` ở cả ba preset `dev`, `asan`, `ubsan`, mỗi job 63/63 test. libsodium
+  1.0.22: CI run 36327515893 (commit `02c21f3`) xanh ở mọi job — port build bằng autotools trên
+  Linux x64, Linux arm64 và Android, bằng msbuild trên Windows; test của `engine/crypto`, gồm vector
+  RFC 8032, 7748, 8439 và chuỗi Argon2id của argon2-cffi, xanh ở `linux`, `linux-tsan`, `coverage`,
+  `linux-arm64` và `windows` `dev`, `asan`, `ubsan`; job fuzz (run 36327518613) xanh.
 
 ### NGHI-NGO-028 — Bit kết quả của `engine/math` giống nhau trên arm64
 
@@ -281,7 +284,9 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   Mac Apple Silicon, hoặc trên runner Linux arm64 của CI.
 - **Trạng thái:** mở. Đã đo trên x64: 300 lượt lặp ở preset `local`, 50 lượt dưới TSan, xanh.
   Trên Linux arm64 (CI run 36323827016, runner `ubuntu-24.04-arm`): một lượt, xanh; job CI
-  `linux-arm64` từ nay lặp `engine_jobs_tests` 200 lượt mỗi lần chạy.
+  `linux-arm64` từ nay lặp `engine_jobs_tests` 200 lượt mỗi lần chạy (18 test mỗi lượt, bỏ death
+  test). Đã xanh: CI run 36324283492 và 36327515893, tổng 400 lượt. Đóng khi tổng số lượt trên
+  arm64 đạt 1000 như cách kiểm.
 
 ### NGHI-NGO-031 — Sanitizer thấy lỗi bộ nhớ bên trong libsodium
 
