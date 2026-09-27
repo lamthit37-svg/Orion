@@ -16,6 +16,7 @@
 #include <cstddef>
 #include <expected>
 #include <span>
+#include <string_view>
 #include <type_traits>
 
 namespace orion::core {
@@ -34,6 +35,14 @@ namespace orion::core {
     const std::span<std::byte> bytes) noexcept {
     // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): serializer (X.3), xem trên.
     return {reinterpret_cast<unsigned char*>(bytes.data()), bytes.size()};
+}
+
+// Cùng vùng byte dưới dạng chuỗi, không sao chép, cho định dạng có chuỗi nằm trong dữ liệu nhị phân
+// (bảng đường dẫn của pak). char đọc được mọi đối tượng như unsigned char; chuỗi nhận được chưa
+// được kiểm gì, kể cả UTF-8.
+[[nodiscard]] inline std::string_view as_chars(const std::span<const std::byte> bytes) noexcept {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): serializer (X.3), xem trên.
+    return {reinterpret_cast<const char*>(bytes.data()), bytes.size()};
 }
 
 template <std::integral T>

@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <limits>
 #include <span>
+#include <string_view>
 
 namespace orion::core {
 namespace {
@@ -100,6 +101,17 @@ TEST(Bytes, UnsignedCharViewsAliasTheSameMemory) {
     EXPECT_EQ(buffer[1], std::byte{0x7F});
     EXPECT_EQ(static_cast<const void*>(read.data()), static_cast<const void*>(buffer.data()));
     EXPECT_TRUE(as_uchars({}).empty());
+}
+
+TEST(Bytes, CharViewSharesMemoryWithoutCopying) {
+    const std::array<std::byte, 4> buffer{std::byte{'p'}, std::byte{'a'}, std::byte{'k'},
+                                          std::byte{0xC3}};
+    const std::string_view text = as_chars(buffer);
+    ASSERT_EQ(text.size(), 4U);
+    EXPECT_EQ(text.substr(0, 3), "pak");
+    EXPECT_EQ(static_cast<unsigned char>(text[3]), 0xC3U);
+    EXPECT_EQ(static_cast<const void*>(text.data()), static_cast<const void*>(buffer.data()));
+    EXPECT_TRUE(as_chars({}).empty());
 }
 
 TEST(ByteWriter, OverflowWritesNothingFurther) {
