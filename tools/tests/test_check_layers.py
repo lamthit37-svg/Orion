@@ -127,8 +127,12 @@ class ScanTest(FakeRepo):
         # <process.h> là API luồng của CRT Windows (_beginthreadex), không phải thư viện ngoài.
         self.write("engine/jobs/thread.cpp", "#include <process.h>\n")
         self.write("engine/jobs/win/thread.cpp", "#include <process.h>\n")
+        # <mstcpip.h> (SIO_UDP_CONNRESET) là phần mở rộng của Winsock, không phải thư viện ngoài.
+        self.write("engine/net/socket.cpp", "#include <mstcpip.h>\n")
+        self.write("engine/net/win/socket.cpp", "#include <winsock2.h>\n#include <mstcpip.h>\n")
         self.assert_findings([("engine/core/clock.cpp", "layers/os-header")] * 2
-                             + [("engine/jobs/thread.cpp", "layers/os-header")])
+                             + [("engine/jobs/thread.cpp", "layers/os-header"),
+                                ("engine/net/socket.cpp", "layers/os-header")])
 
     def test_platform_macros(self) -> None:
         self.write("engine/core/a.cpp", "#ifdef _WIN32\n#endif\n#if ORION_PLATFORM_LINUX\n#endif\n")

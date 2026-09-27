@@ -91,7 +91,8 @@ INTRINSIC_HEADERS = frozenset(
 )
 OS_HEADERS = frozenset(
     """
-    windows.h winsock2.h ws2tcpip.h mswsock.h mmsystem.h timeapi.h avrt.h bcrypt.h dbghelp.h
+    windows.h winsock2.h ws2tcpip.h mswsock.h mstcpip.h mmsystem.h timeapi.h avrt.h bcrypt.h
+    dbghelp.h
     psapi.h processthreadsapi.h synchapi.h winternl.h objbase.h combaseapi.h shellapi.h shlobj.h
     knownfolders.h wrl.h unistd.h fcntl.h pthread.h dlfcn.h poll.h sched.h netdb.h ifaddrs.h
     syslog.h termios.h spawn.h pwd.h grp.h execinfo.h malloc.h alloca.h jni.h process.h
