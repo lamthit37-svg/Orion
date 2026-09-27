@@ -15,8 +15,9 @@
 #include "engine/net/socket.hpp"
 
 #include <winsock2.h>
-// mstcpip.h dùng các macro IOC_* của winsock2.h nên phải đứng sau nó.
-#include <mstcpip.h>
+// SIO_UDP_CONNRESET nằm ở mswsock.h (không phải mstcpip.h), header này cần kiểu và macro IOC_* của
+// winsock2.h nên phải đứng sau nó.
+#include <mswsock.h>
 #include <ws2tcpip.h>
 
 #include <algorithm>
