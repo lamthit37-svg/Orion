@@ -20,9 +20,11 @@ class FakeRepo(unittest.TestCase):
 
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory(prefix="orion-gate-")
-        self.root = pathlib.Path(self._tmp.name)
+        # resolve(): trên Windows thư mục tạm có thể là tên 8.3 (RUNNER~1), khác đường dẫn thật.
+        self.root = pathlib.Path(self._tmp.name).resolve()
         subprocess.run(["git", "init", "-q"], cwd=self.root, check=True)
-        (self.root / "CLAUDE.md").write_text("repo giả\n", encoding="utf-8")
+        # Ghi bytes để Windows không tự đổi \n thành \r\n.
+        (self.root / "CLAUDE.md").write_bytes("repo giả\n".encode("utf-8"))
 
     def tearDown(self) -> None:
         self._tmp.cleanup()

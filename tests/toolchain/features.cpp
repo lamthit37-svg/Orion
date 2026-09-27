@@ -5,13 +5,27 @@
 // macro), chờ CI xanh trên cả năm toolchain, rồi mới dùng. Giá trị so sánh là bản tối thiểu dự án
 // cần, không phải giá trị đo được; số đo từng toolchain nằm ở NGHI-NGO-009 và NGHI-NGO-019.
 
+// Header riêng của từng tính năng được include cùng <version>, để mỗi macro được kiểm cùng header
+// mà code thật sẽ include. misc-include-cleaner không hiểu feature-test macro (macro có ở cả
+// <version> lẫn header riêng): nó vừa báo header thừa vừa báo thiếu header cho cùng một macro, nên
+// tắt riêng check này cho khối include và khối assert theo macro, không tắt cho phần biên dịch thử.
+// NOLINTBEGIN(misc-include-cleaner)
 #include <array>
+#include <atomic>
 #include <bit>
+#include <charconv>
 #include <compare>
 #include <concepts>
 #include <cstdint>
 #include <expected>
+#include <format>
+#include <optional>
+#include <ranges>
+#include <source_location>
 #include <span>
+#include <string_view>
+#include <system_error>
+#include <utility>
 #include <version>
 
 namespace orion::toolchain {
@@ -57,10 +71,9 @@ static_assert(at_least(__cpp_lib_ranges, 201911L), "<ranges>");
 static_assert(at_least(__cpp_lib_three_way_comparison, 201907L), "<compare>");
 static_assert(at_least(__cpp_lib_string_view, 201803L), "std::string_view");
 static_assert(at_least(__cpp_lib_optional, 201606L), "std::optional");
-static_assert(at_least(__cpp_lib_to_chars, 201611L),
-              "std::to_chars, std::from_chars cho số nguyên");
 static_assert(at_least(__cpp_lib_atomic_wait, 201907L),
               "std::atomic::wait, notify cho engine/jobs");
+// NOLINTEND(misc-include-cleaner)
 
 // ---------------------------------------------------------------------------------------------
 // Biên dịch thử những gì không có macro riêng.
@@ -95,6 +108,16 @@ constexpr int sum(const std::span<const int> values) {
 }
 constexpr std::array<int, 3> kValues{1, 2, 3};
 static_assert(sum(kValues) == 6);
+
+// std::to_chars và std::from_chars cho số nguyên. Không dùng macro __cpp_lib_to_chars: libc++ của
+// NDK r29 không định nghĩa nó vì bản số thực chưa đủ (NGHI-NGO-009), dù bản số nguyên có sẵn.
+[[maybe_unused]] bool integer_charconv_round_trip(const std::uint32_t value) {
+    std::array<char, 16> text{};
+    const auto written = std::to_chars(text.data(), text.data() + text.size(), value);
+    std::uint32_t parsed = 0;
+    const auto read = std::from_chars(text.data(), written.ptr, parsed);
+    return written.ec == std::errc{} && read.ec == std::errc{} && parsed == value;
+}
 
 }  // namespace
 }  // namespace orion::toolchain

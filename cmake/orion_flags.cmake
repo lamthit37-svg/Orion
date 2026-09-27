@@ -75,6 +75,10 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 if(ORION_SHIP)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 endif()
+if(ORION_TOOLCHAIN MATCHES "^(msvc|clang-cl)$")
+    # CMake mặc định thêm /EHsc cho mọi target; exception do orion_apply_flags() quyết theo target.
+    string(REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+endif()
 if(ORION_TOOLCHAIN STREQUAL "msvc" AND ORION_SANITIZE STREQUAL "address")
     # /RTC1 mặc định của Debug không chạy chung với ASan của MSVC.
     foreach(lang C CXX)
@@ -146,7 +150,10 @@ function(orion_apply_flags target)
             target_compile_definitions(${target} PRIVATE _HAS_EXCEPTIONS=0)
         endif()
     elseif(ORION_TOOLCHAIN STREQUAL "clang-cl")
-        target_compile_options(${target} PRIVATE ${ORION_CLANG_CL_WARNINGS} /fp:precise
+        # Không thêm /fp:precise: clang-cl dịch nó thành -ffp-model=precise, kéo theo
+        # -ffp-contract=on, rồi báo -Woverriding-option khi gặp -ffp-contract=off (đo trên CI).
+        # Mô hình mặc định của clang đã là precise.
+        target_compile_options(${target} PRIVATE ${ORION_CLANG_CL_WARNINGS}
                                                  /clang:-ffp-contract=off)
         if(arg_EXCEPTIONS)
             target_compile_options(${target} PRIVATE /EHsc)

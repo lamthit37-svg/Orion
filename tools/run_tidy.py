@@ -63,6 +63,7 @@ def find_clang_tidy() -> str:
 def project_sources(root: pathlib.Path, database: pathlib.Path) -> list[str]:
     """Tệp nguồn của dự án trong compile database, đường dẫn tính từ gốc repo, không trùng lặp."""
     entries = json.loads(database.read_text(encoding="utf-8"))
+    root = root.resolve()
     found: set[str] = set()
     for entry in entries:
         path = pathlib.Path(entry["directory"], entry["file"]).resolve()

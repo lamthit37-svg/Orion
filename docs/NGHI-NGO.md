@@ -115,7 +115,14 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   (NGHI-NGO-015, NGHI-NGO-019); bốn cái còn lại chưa.
 - **Cách kiểm:** CI build target `toolchain_features` trên MSVC, clang-cl, clang Linux, NDK và
   Apple clang.
-- **Trạng thái:** mở. Toolchain 3: xanh (NGHI-NGO-019).
+- **Trạng thái:** mở. Đã đo từng phần trên CI (run 36314444059, commit `5ad2785`):
+  - toolchain 1, MSVC 14.51.36231 (Visual Studio 18.10.1, runner `windows-2025`): mọi
+    `static_assert` của `features.cpp` xanh ở preset `dev` và `asan`;
+  - toolchain 3: xanh (NGHI-NGO-019);
+  - toolchain 4, clang của NDK 29.0.14206865 (API mặc định 21): chỉ `__cpp_lib_to_chars` vắng,
+    vì libc++ chưa đủ bản số thực; `features.cpp` thay assert đó bằng biên dịch thử bản số nguyên;
+  - toolchain 2 (clang-cl): chưa đo được vì lỗi cờ, xem ghi chú trong `cmake/orion_flags.cmake`;
+  - toolchain 5: chưa chạy (NGHI-NGO-008).
 
 ### NGHI-NGO-010 — Điều khoản license hiện hành của FMOD
 
