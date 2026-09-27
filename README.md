@@ -76,6 +76,8 @@ CHƠI chưa có.
 - `engine/net` (đang dựng): bitstream bit-packed, little-endian cho protocol
   (`docs/formats/protocol.md`, ADR 0004) — số nguyên theo khoảng, số thực lượng tử hoá, byte và chuỗi
   có giới hạn; bên đọc là hàm toàn phần và buộc mỗi tin nhắn có đúng một cách mã hoá. Địa chỉ IPv4 và
-  IPv6 kèm cổng: đọc chặt từ cấu hình, in theo dạng chuẩn RFC 5952.
+  IPv6 kèm cổng: đọc chặt từ cấu hình, in theo dạng chuẩn RFC 5952. Socket UDP không chặn cho Linux,
+  Android, Apple và Windows: gói lớn hơn bộ đệm bị bỏ chứ không bị cắt, ICMP từ lần gửi trước không
+  thành lỗi nhận, chờ gói có hạn.
 - Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest, bitstream, địa chỉ),
   `tools/run_fuzz.py` và job fuzz đêm; ở mọi preset khác ctest chạy lại corpus.
