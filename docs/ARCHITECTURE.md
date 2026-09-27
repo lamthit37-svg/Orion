@@ -161,6 +161,8 @@ EngineGAME/
 │   ├── check_style.py — cổng hiện có (hiến pháp V.5), giữ nguyên đường dẫn
 │   ├── check_layers.py — luật include ở CLAUDE.md X.1
 │   ├── check_tracked.py — tệp nguồn bị .gitignore nuốt
+│   ├── gatelib.py — phần dùng chung của ba cổng trên
+│   ├── tests/ — unittest của các cổng kiểm, chạy trong ctest
 │   ├── cooker/ — orion_cooker
 │   ├── editor/ — orion_editor: world editor trên Dear ImGui
 │   ├── codegen/ — sinh C++ từ *.schema
