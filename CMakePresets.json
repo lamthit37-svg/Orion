@@ -201,7 +201,14 @@
     { "name": "linux", "inherits": "test-base", "configurePreset": "linux" },
     { "name": "linux-tsan", "inherits": "test-base", "configurePreset": "linux-tsan" },
     { "name": "linux-fuzz", "inherits": "test-base", "configurePreset": "linux-fuzz" },
-    { "name": "linux-coverage", "inherits": "test-base", "configurePreset": "linux-coverage" }
+    {
+      "name": "linux-coverage",
+      "inherits": "test-base",
+      "configurePreset": "linux-coverage",
+      "environment": {
+        "LLVM_PROFILE_FILE": "${sourceDir}/out/build/linux-coverage/coverage/%p-%m.profraw"
+      }
+    }
   ],
   "workflowPresets": [
     {

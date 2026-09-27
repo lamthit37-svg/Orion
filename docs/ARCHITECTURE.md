@@ -166,6 +166,7 @@ EngineGAME/
 │   ├── check_tracked.py — tệp nguồn bị .gitignore nuốt
 │   ├── gatelib.py — phần dùng chung của ba cổng trên
 │   ├── run_tidy.py — chạy clang-tidy bản ghim trên compile database (X.1)
+│   ├── check_coverage.py — ngưỡng coverage dòng của CLAUDE.md X.4, đo bằng llvm-cov
 │   ├── tests/ — unittest của các cổng kiểm, chạy trong ctest
 │   ├── cooker/ — orion_cooker
 │   ├── editor/ — orion_editor: world editor trên Dear ImGui

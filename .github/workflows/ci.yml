@@ -54,6 +54,26 @@ jobs:
           triplet: x64-linux-orion
       - run: cmake --workflow --preset ${{ matrix.preset }}
 
+  coverage:
+    name: "§8.3 coverage: llvm-cov"
+    needs: gate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: clang 20 và libstdc++ 14 (NGHI-NGO-015)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev
+      - uses: ./.github/actions/setup-orion
+        with:
+          triplet: x64-linux-orion
+      - run: cmake --preset linux-coverage
+      - run: cmake --build --preset linux-coverage
+      - run: ctest --preset linux-coverage
+      - name: Ngưỡng coverage của CLAUDE.md X.4
+        run: python tools/check_coverage.py out/build/linux-coverage
+
   tidy:
     name: "§8.4 clang-tidy: linux"
     needs: gate

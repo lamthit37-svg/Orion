@@ -27,6 +27,7 @@ Cần có:
 | Dựng và test trên Linux | `cmake --workflow --preset linux` |
 | Dựng và test trên Windows | `cmake --workflow --preset dev` |
 | Race detector trên Linux | `cmake --workflow --preset linux-tsan` |
+| Coverage (X.4) | build và `ctest --preset linux-coverage`, rồi `tools/check_coverage.py out/build/linux-coverage` |
 | Cổng kiểm | `python3.13 tools/check_style.py`, `check_layers.py`, `check_tracked.py` |
 | Sửa format tự động | `python3.13 tools/check_style.py --fix` |
 
