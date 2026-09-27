@@ -1,8 +1,9 @@
 // Socket UDP trên Windows (Winsock 2). WSAStartup chạy đúng một lần cho cả tiến trình. Socket tạo
 // bằng WSASocketW với WSA_FLAG_NO_HANDLE_INHERIT (tiến trình con không thừa kế, như SOCK_CLOEXEC)
-// và đặt không chặn bằng ioctlsocket(FIONBIO). SIO_UDP_CONNRESET được tắt: khi bật (mặc định), gói
-// ICMP "port unreachable" của một lần gửi trước làm recvfrom trả WSAECONNRESET, điều UDP không cần.
-// Gói lớn hơn bộ đệm nhận cho WSAEMSGSIZE và bị bỏ.
+// và đặt không chặn bằng ioctlsocket(FIONBIO). SO_EXCLUSIVEADDRUSE được bật, như hành vi mặc định
+// của Linux: không socket nào khác bind chồng lên cổng. SIO_UDP_CONNRESET được tắt: khi bật (mặc
+// định), gói ICMP "port unreachable" của một lần gửi trước làm recvfrom trả WSAECONNRESET, điều UDP
+// không cần. Gói lớn hơn bộ đệm nhận cho WSAEMSGSIZE và bị bỏ.
 //
 // Con trỏ tới SOCKADDR_STORAGE đi qua void* thay vì reinterpret_cast (X.3); mọi trường được đọc ghi
 // qua đúng kiểu sockaddr_in hay sockaddr_in6 bằng memcpy.
@@ -142,6 +143,14 @@ Result<std::intptr_t> open_udp(const Address& local) noexcept {
     u_long non_blocking = 1;
     if (ioctlsocket(udp, FIONBIO, &non_blocking) != 0) {
         return close_with(udp, "net: không đặt được FIONBIO");
+    }
+    // Không cho socket khác bind chồng lên cổng này bằng SO_REUSEADDR, điều Windows cho phép khi cờ
+    // này tắt (mặc định).
+    const BOOL exclusive = TRUE;
+    if (setsockopt(udp, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
+                   static_cast<const char*>(static_cast<const void*>(&exclusive)),
+                   sizeof(exclusive)) != 0) {
+        return close_with(udp, "net: không bật được SO_EXCLUSIVEADDRUSE");
     }
     BOOL report_reset = FALSE;
     DWORD returned = 0;
