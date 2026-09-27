@@ -1,0 +1,115 @@
+# clang-tidy của Orion. Mọi phát hiện chặn merge (CLAUDE.md X.1). Phiên bản ghim: clang-tidy 20.
+#
+# Check nào bị tắt dưới đây đều có lý do ngay cạnh. Không tắt thêm check để CI xanh; một chỗ cụ thể
+# cần ngoại lệ thì dùng NOLINTNEXTLINE(<tên-check>) kèm lý do trên cùng dòng.
+#
+# Các luật CLAUDE.md được thi hành ở đây:
+#   X.2  hàm dài quá 60 dòng hoặc lồng quá 4 cấp: readability-function-size
+#   X.3  const mặc định: misc-const-correctness, readability-make-member-function-const
+#   X.3  cấm đệ quy: misc-no-recursion
+#   X.3  reinterpret_cast, const_cast, ép kiểu qua union: cppcoreguidelines-pro-type-*
+#   X.3  macro chỉ khi bắt buộc, tên ORION_*: cppcoreguidelines-macro-usage
+#   X.5  không gọi .value(): bugprone-unchecked-optional-access
+#   X.7  không new, delete, malloc, free trần: cppcoreguidelines-owning-memory, -no-malloc
+Checks: >
+  -*,
+  android-cloexec-*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  cert-dcl50-cpp,
+  cert-dcl58-cpp,
+  cert-env33-c,
+  cert-err33-c,
+  cert-flp30-c,
+  cert-mem57-cpp,
+  cert-msc30-c,
+  cert-msc50-cpp,
+  cert-msc51-cpp,
+  cert-oop57-cpp,
+  cert-oop58-cpp,
+  cert-str34-c,
+  clang-analyzer-*,
+  concurrency-*,
+  cppcoreguidelines-*,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-type-static-cast-downcast,
+  misc-*,
+  modernize-*,
+  -modernize-use-designated-initializers,
+  -modernize-use-trailing-return-type,
+  performance-*,
+  portability-*,
+  readability-*,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-uppercase-literal-suffix
+# Lý do các check bị tắt:
+#   bugprone-easily-swappable-parameters: báo mọi cặp tham số liền nhau cùng kiểu, kể cả (x, y, z).
+#   *-avoid-magic-numbers, readability-magic-numbers: hằng số của toán và định dạng nhị phân có
+#     tên ở nơi khai báo; bắt đặt tên cho từng số làm code khó đọc hơn.
+#   pro-bounds-constant-array-index, pro-bounds-pointer-arithmetic: code hệ thống (allocator,
+#     bitstream, serializer) cần chỉ số động; ranh giới được kiểm bằng span và test, fuzz.
+#   pro-type-static-cast-downcast: gợi ý dynamic_cast, mà RTTI bị tắt (X.3).
+#   modernize-use-designated-initializers: ép Vec3{.x = 1, .y = 2, .z = 3} cho kiểu toán.
+#   modernize-use-trailing-return-type: không phải quy ước của repo.
+#   readability-identifier-length: i, x, y, dt là tên đúng trong code toán và vòng lặp ngắn.
+#   readability-uppercase-literal-suffix: chỉ là quy ước viết hoa hậu tố số, không bắt lỗi nào.
+WarningsAsErrors: '*'
+HeaderFilterRegex: '.*/(engine|game|tools|tests)/.*'
+SystemHeaders: false
+FormatStyle: none
+CheckOptions:
+  bugprone-unused-return-value.CheckedReturnTypes: '::std::error_code;::std::error_condition;::std::errc;::std::expected;::orion::Error'
+  cppcoreguidelines-macro-usage.AllowedRegexp: '^ORION_[A-Z0-9_]+$'
+  cppcoreguidelines-macro-usage.CheckCapsOnly: false
+  cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor: true
+  cppcoreguidelines-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: true
+  misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic: true
+  misc-const-correctness.AnalyzeValues: true
+  misc-const-correctness.AnalyzeReferences: true
+  misc-const-correctness.WarnPointersAsValues: false
+  # Đã đo với clang-tidy 20: thân hàm được tính là cấp lồng 1, nên ngưỡng 5 cho phép đúng 4 cấp
+  # lồng bên trong thân hàm và báo cấp thứ 5 (X.2). LineThreshold đếm từ dòng có { mở thân hàm tới
+  # dòng ngay trước }.
+  readability-function-size.LineThreshold: 60
+  readability-function-size.NestingThreshold: 5
+  readability-function-cognitive-complexity.Threshold: 25
+  readability-function-cognitive-complexity.IgnoreMacros: true
+  readability-implicit-bool-conversion.AllowPointerConditions: true
+  readability-implicit-bool-conversion.AllowIntegerConditions: false
+  # Quy ước đặt tên (hiến pháp IV, NGHI-NGO-012): kiểu PascalCase, hàm và biến snake_case,
+  # thành viên riêng có hậu tố _, hằng số kPascalCase, macro ORION_*.
+  readability-identifier-naming.NamespaceCase: lower_case
+  readability-identifier-naming.ClassCase: CamelCase
+  readability-identifier-naming.StructCase: CamelCase
+  readability-identifier-naming.UnionCase: CamelCase
+  readability-identifier-naming.EnumCase: CamelCase
+  readability-identifier-naming.EnumConstantCase: CamelCase
+  readability-identifier-naming.ConceptCase: CamelCase
+  readability-identifier-naming.TemplateParameterCase: CamelCase
+  readability-identifier-naming.ValueTemplateParameterCase: CamelCase
+  readability-identifier-naming.TypeAliasCase: CamelCase
+  readability-identifier-naming.TypedefCase: CamelCase
+  readability-identifier-naming.TypeAliasIgnoredRegexp: '^([iu](8|16|32|64)|f(32|64)|usize|isize|value_type|size_type|difference_type|reference|const_reference|pointer|const_pointer|iterator|const_iterator|element_type|type)$'
+  readability-identifier-naming.FunctionCase: lower_case
+  readability-identifier-naming.MethodCase: lower_case
+  readability-identifier-naming.ParameterCase: lower_case
+  readability-identifier-naming.VariableCase: lower_case
+  readability-identifier-naming.LocalConstantCase: lower_case
+  readability-identifier-naming.MemberCase: lower_case
+  readability-identifier-naming.PrivateMemberCase: lower_case
+  readability-identifier-naming.PrivateMemberSuffix: _
+  readability-identifier-naming.ProtectedMemberCase: lower_case
+  readability-identifier-naming.ProtectedMemberSuffix: _
+  readability-identifier-naming.ConstexprVariableCase: CamelCase
+  readability-identifier-naming.ConstexprVariablePrefix: k
+  readability-identifier-naming.GlobalConstantCase: CamelCase
+  readability-identifier-naming.GlobalConstantPrefix: k
+  readability-identifier-naming.ClassConstantCase: CamelCase
+  readability-identifier-naming.ClassConstantPrefix: k
+  readability-identifier-naming.StaticConstantCase: CamelCase
+  readability-identifier-naming.StaticConstantPrefix: k
+  readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
+  readability-identifier-naming.MacroDefinitionPrefix: ORION_

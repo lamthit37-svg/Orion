@@ -1,0 +1,62 @@
+# Định dạng mã C, C++ và Objective-C++ của Orion.
+#
+# File này bất biến (hiến pháp V.4, CLAUDE.md X.1): đổi nó là format lại cả repo, nên không bao
+# giờ đổi để né một dòng khó format. Phiên bản ghim: clang-format 20.1.8; tools/check_style.py từ
+# chối bản khác vì mỗi bản format hơi khác nhau.
+---
+Language: Cpp
+BasedOnStyle: Google
+Standard: Latest
+ColumnLimit: 100
+IndentWidth: 4
+ContinuationIndentWidth: 4
+AccessModifierOffset: -4
+ConstructorInitializerIndentWidth: 4
+LineEnding: LF
+InsertNewlineAtEOF: true
+KeepEmptyLines:
+  AtEndOfFile: false
+  AtStartOfBlock: false
+  AtStartOfFile: false
+MaxEmptyLinesToKeep: 1
+InsertBraces: true
+DerivePointerAlignment: false
+PointerAlignment: Left
+ReferenceAlignment: Pointer
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: Inline
+AllowShortLoopsOnASingleLine: false
+RequiresClausePosition: OwnLine
+BreakTemplateDeclarations: Yes
+FixNamespaceComments: true
+NamespaceIndentation: None
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeIsMainRegex: '([-_](test|bench|fuzz))?$'
+IncludeCategories:
+  # Header của chính dự án, kể cả header sinh ra trong out/: đường dẫn tính từ gốc repo.
+  - Regex: '^"(engine|game|tools|tests)/'
+    Priority: 2
+  # Thư viện chuẩn C++: tên trong ngoặc nhọn, không đuôi, không thư mục.
+  - Regex: '^<[a-z_0-9]+>$'
+    Priority: 4
+  # Thư viện ngoài và header hệ điều hành.
+  - Regex: '^<.+>$'
+    Priority: 3
+  - Regex: '.*'
+    Priority: 5
+---
+Language: ObjC
+BasedOnStyle: Google
+ColumnLimit: 100
+IndentWidth: 4
+ObjCBlockIndentWidth: 4
+DerivePointerAlignment: false
+PointerAlignment: Left
+LineEnding: LF
+InsertNewlineAtEOF: true
+InsertBraces: true

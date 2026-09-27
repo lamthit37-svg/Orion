@@ -1,0 +1,24 @@
+# Mọi thứ sinh ra nằm trong out/ (ARCH §1). Xoá lúc nào cũng được.
+/out/
+
+# vcpkg ở manifest mode khi chạy `vcpkg install` tay ở gốc repo.
+/vcpkg_installed/
+
+# Preset riêng của từng máy.
+CMakeUserPresets.json
+
+# Editor và công cụ cục bộ.
+/.vs/
+/.vscode/
+/.idea/
+/.cache/
+/compile_commands.json
+*.user
+
+# Python.
+__pycache__/
+*.pyc
+
+# Hệ điều hành.
+.DS_Store
+Thumbs.db

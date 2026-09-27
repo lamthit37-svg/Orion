@@ -1,0 +1,44 @@
+# Xuống dòng: LF ở mọi nơi, trừ script của cmd.exe cần CRLF.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Tệp nhị phân không bao giờ bị đổi xuống dòng hay diff dạng chữ.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.tga binary
+*.dds binary
+*.ktx2 binary
+*.exr binary
+*.hdr binary
+*.psd binary
+*.fbx binary
+*.glb binary
+*.bin binary
+*.wav binary
+*.ogg binary
+*.flac binary
+*.bank binary
+*.ttf binary
+*.otf binary
+*.pak binary
+
+# Asset nguồn trong content/ đi qua Git LFS (ARCH §2).
+content/**/*.png filter=lfs diff=lfs merge=lfs -text
+content/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+content/**/*.jpeg filter=lfs diff=lfs merge=lfs -text
+content/**/*.tga filter=lfs diff=lfs merge=lfs -text
+content/**/*.exr filter=lfs diff=lfs merge=lfs -text
+content/**/*.hdr filter=lfs diff=lfs merge=lfs -text
+content/**/*.psd filter=lfs diff=lfs merge=lfs -text
+content/**/*.fbx filter=lfs diff=lfs merge=lfs -text
+content/**/*.glb filter=lfs diff=lfs merge=lfs -text
+content/**/*.gltf filter=lfs diff=lfs merge=lfs -text
+content/**/*.bin filter=lfs diff=lfs merge=lfs -text
+content/**/*.wav filter=lfs diff=lfs merge=lfs -text
+content/**/*.ogg filter=lfs diff=lfs merge=lfs -text
+content/**/*.flac filter=lfs diff=lfs merge=lfs -text
+content/**/*.bank filter=lfs diff=lfs merge=lfs -text
+content/**/*.ttf filter=lfs diff=lfs merge=lfs -text
+content/**/*.otf filter=lfs diff=lfs merge=lfs -text
