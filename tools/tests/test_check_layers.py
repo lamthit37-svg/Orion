@@ -124,7 +124,11 @@ class ScanTest(FakeRepo):
         self.write("engine/core/clock.cpp", "#include <windows.h>\n#include <sys/time.h>\n")
         self.write("engine/core/win/clock.cpp", "#include <windows.h>\n")
         self.write("engine/core/linux/clock.cpp", "#include <sys/time.h>\n")
-        self.assert_findings([("engine/core/clock.cpp", "layers/os-header")] * 2)
+        # <process.h> là API luồng của CRT Windows (_beginthreadex), không phải thư viện ngoài.
+        self.write("engine/jobs/thread.cpp", "#include <process.h>\n")
+        self.write("engine/jobs/win/thread.cpp", "#include <process.h>\n")
+        self.assert_findings([("engine/core/clock.cpp", "layers/os-header")] * 2
+                             + [("engine/jobs/thread.cpp", "layers/os-header")])
 
     def test_platform_macros(self) -> None:
         self.write("engine/core/a.cpp", "#ifdef _WIN32\n#endif\n#if ORION_PLATFORM_LINUX\n#endif\n")
