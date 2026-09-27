@@ -74,6 +74,10 @@ jobs:
         with:
           triplet: arm64-linux-orion
       - run: cmake --workflow --preset linux-arm64
+      - name: Lặp test job system trên mô hình bộ nhớ yếu (NGHI-NGO-030)
+        run: >-
+          out/build/linux-arm64/engine/jobs/engine_jobs_tests --gtest_repeat=200
+          --gtest_brief=1 --gtest_filter=-*DeathTest*
 
   coverage:
     name: "§8.3 coverage: llvm-cov"

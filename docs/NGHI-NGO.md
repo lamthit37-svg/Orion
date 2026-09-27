@@ -244,9 +244,12 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   chế độ flush-to-zero, từ `fmod` của bionic hay libm của Apple, hoặc từ compiler hợp nhất FMA.
 - **Cách kiểm:** đẩy `engine_math_tests` và `engine/math/tests/data/` lên thiết bị hoặc emulator
   Android arm64 bằng `adb` rồi chạy; trên Mac arm64 chạy preset tương ứng của Apple clang.
-- **Trạng thái:** mở. x64 đã đo, cả hai test xanh: clang 20 trên Linux (local, ASan, UBSan, TSan,
-  coverage); CI run 36322188292 (commit `fe1c511`) trên MSVC 14.51.36231 (preset `dev`, `asan`)
-  và clang-cl (preset `ubsan`), mỗi job 102/102 test.
+- **Trạng thái:** mở cho bionic (NDK) và Apple clang. Đã đo, cả hai test xanh với cùng hằng
+  golden: clang 20 trên Linux x64 (local, ASan, UBSan, TSan, coverage); CI run 36322188292 (commit
+  `fe1c511`) trên MSVC 14.51.36231 (preset `dev`, `asan`) và clang-cl (preset `ubsan`), mỗi job
+  102/102 test; CI run 36323827016 (commit `9a51f32`) trên Linux arm64 (runner
+  `ubuntu-24.04-arm`, clang 20, glibc), 122/122 test. Kiến trúc arm64 vì vậy đã đo; phần còn lại
+  là libm của bionic và Apple.
 
 ### NGHI-NGO-029 — SIMD viết tay cho `engine/math`
 
@@ -274,6 +277,8 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
 - **Cách kiểm:** chạy `engine_jobs_tests --gtest_repeat=1000` trên thiết bị Android arm64 và trên
   Mac Apple Silicon, hoặc trên runner Linux arm64 của CI.
 - **Trạng thái:** mở. Đã đo trên x64: 300 lượt lặp ở preset `local`, 50 lượt dưới TSan, xanh.
+  Trên Linux arm64 (CI run 36323827016, runner `ubuntu-24.04-arm`): một lượt, xanh; job CI
+  `linux-arm64` từ nay lặp `engine_jobs_tests` 200 lượt mỗi lần chạy.
 
 ---
 
