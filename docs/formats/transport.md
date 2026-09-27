@@ -5,7 +5,8 @@ token (`connect_token.md`), chứng minh client nhận được gói ở địa 
 trạng thái, rồi trao khoá X25519 mà server ký bằng khoá định danh của cụm. Sau đó mỗi gói được mã
 hoá và xác thực bằng AEAD, nonce lấy từ số thứ tự của gói, và một cửa sổ chống replay bỏ gói lặp
 lại. Kết nối được nhận diện bằng connection id do server cấp, không bằng cặp IP:port. Code nằm ở
-`engine/net/handshake.hpp`, `engine/net/packet.hpp` và `engine/net/replay_window.hpp`.
+`engine/net/`: `handshake.hpp`, `packet.hpp`, `replay_window.hpp` cho định dạng;
+`client_transport.hpp` và `server_transport.hpp` cho hai máy trạng thái.
 
 Đổi bất kỳ điều gì ở đây là đổi hợp đồng: sửa tài liệu này và code trong cùng commit (CLAUDE.md
 X.15). Client và cụm server luôn được cập nhật cùng nhau (ADR 0004), nên không có đàm phán phiên bản
@@ -181,6 +182,49 @@ Bên nhận làm theo thứ tự, bỏ gói ở bước đầu tiên không qua:
 3. Hỏi cửa sổ chống replay: gói có `sequence` quá cũ hay đã nhận thì bỏ, không giải mã.
 4. Mở AEAD. Chỉ gói qua bước này mới được ghi vào cửa sổ chống replay, để gói giả không đẩy được
    cửa sổ đi.
+
+## Kết nối
+
+### Payload
+
+Byte đầu của payload trong gói dữ liệu là `kind`:
+
+| `kind` | Payload |
+|---|---|
+| 0 | keep-alive: đúng 1 byte |
+| 1 | dữ liệu của tầng trên: byte `kind` rồi 1 tới 1170 byte |
+| 2 | ngắt kết nối: đúng 1 byte |
+
+Payload khác bị bỏ (gói vẫn được tính là đã nhận hợp lệ). 1170 là payload mà mọi số thứ tự chở được
+trong 1200 byte, trừ byte `kind`.
+
+### Server
+
+- Kết nối chờ sau `ACCEPT` trở thành kết nối đã xác nhận khi nhận gói dữ liệu hợp lệ đầu tiên; chỉ
+  từ lúc đó tầng trên mới biết connection id. Không được xác nhận trong 10 giây thì bị bỏ.
+- Gói dữ liệu hợp lệ có số thứ tự lớn hơn mọi số đã nhận chuyển kết nối sang địa chỉ nguồn của nó
+  (client đổi mạng, NAT đổi cổng). Gói hợp lệ nhưng cũ hơn, tới từ địa chỉ khác, vẫn được nhận mà
+  không chuyển địa chỉ. Kẻ ngoài đường truyền không làm được gói hợp lệ nên không kéo được kết nối
+  đi; kẻ trên đường truyền thì vốn đã chặn được gói.
+- Một token chỉ lập một kết nối; server nhớ token đã dùng tới khi token hết hạn, kể cả sau khi kết
+  nối đóng. Bảng này giữ tối đa 4 lần số kết nối tối đa; đầy thì kết nối mới nhận lý do 5.
+
+### Client
+
+- Gửi `REQUEST` rồi `RESPONSE` lại mỗi 250 ms tới khi có trả lời. `CHALLENGE` mới (cùng `nonce`)
+  thay cookie đang dùng. Không xong bắt tay trong 10 giây thì bỏ cuộc; `REJECT` có `nonce` khớp thì
+  dừng ngay với lý do đó.
+- Sau `ACCEPT` hợp lệ, gửi ngay một keep-alive để server xác nhận kết nối.
+- Chỉ nhận gói từ địa chỉ của server.
+
+### Hai bên
+
+- Đã 1 giây không gửi gì thì gửi keep-alive.
+- Không nhận gói hợp lệ nào trong 10 giây thì coi kết nối đã mất.
+- Bên chủ động ngắt gửi 3 gói ngắt kết nối liên tiếp rồi bỏ trạng thái; bên kia bỏ trạng thái khi
+  nhận được một trong số đó, hay khi hết 10 giây im lặng.
+
+Các con số ở mục này là chính sách, không phải số đo.
 
 ## Cửa sổ chống replay
 
