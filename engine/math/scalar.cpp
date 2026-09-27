@@ -6,6 +6,7 @@
 
 // Chỉ các hàm cho kết quả duy nhất theo chuẩn mới được lấy từ <cmath>: sqrt làm tròn đúng theo
 // IEEE 754; floor, ceil, trunc, round, fmod luôn biểu diễn được chính xác nên không có làm tròn.
+// Golden test trong tests/trig_test.cpp so từng bit kết quả của chúng giữa các toolchain qua CI.
 
 namespace orion::math {
 

@@ -232,6 +232,20 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   benchmark 1.9.5, CI run 36317622896 (commit `406cd3a`): job `§8.3 linux`, `linux-tsan`,
   `coverage`, `§8.2 windows` ở cả ba preset `dev`, `asan`, `ubsan`, mỗi job 63/63 test.
 
+### NGHI-NGO-028 — Bit kết quả của `engine/math` giống nhau trên arm64
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** `engine_math_tests` xanh trên Android arm64 (NDK 29, bionic) và trên Apple arm64
+  (Apple clang), gồm golden test `Trig.GoldenBitsAreIdenticalOnEveryToolchain` và bảng làm tròn
+  đúng `TrigReference.FaithfullyRoundedOnEveryCase`.
+- **Lý do nghi:** CLAUDE.md X.11. Các hàm chỉ dùng phép IEEE làm tròn đúng và `sqrt`, `floor`,
+  `fmod` của thư viện C, vốn cho kết quả duy nhất theo chuẩn, nhưng CI chỉ chạy test trên x64:
+  job Android chỉ build, job iOS chỉ chạy khi bật tay và cũng chỉ build. Khác biệt có thể đến từ
+  chế độ flush-to-zero, từ `fmod` của bionic hay libm của Apple, hoặc từ compiler hợp nhất FMA.
+- **Cách kiểm:** đẩy `engine_math_tests` và `engine/math/tests/data/` lên thiết bị hoặc emulator
+  Android arm64 bằng `adb` rồi chạy; trên Mac arm64 chạy preset tương ứng của Apple clang.
+- **Trạng thái:** mở. x64 đã đo: clang 20 trên Linux (local, ASan, UBSan, TSan, coverage).
+
 ---
 
 ## Đã đóng

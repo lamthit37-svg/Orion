@@ -167,6 +167,7 @@ EngineGAME/
 │   ├── gatelib.py — phần dùng chung của ba cổng trên
 │   ├── run_tidy.py — chạy clang-tidy bản ghim trên compile database (X.1)
 │   ├── check_coverage.py — ngưỡng coverage dòng của CLAUDE.md X.4, đo bằng llvm-cov
+│   ├── gen_math_reference.py — bảng giá trị làm tròn đúng cho test độ chính xác của engine/math
 │   ├── tests/ — unittest của các cổng kiểm, chạy trong ctest
 │   ├── cooker/ — orion_cooker
 │   ├── editor/ — orion_editor: world editor trên Dear ImGui
