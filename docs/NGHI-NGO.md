@@ -351,3 +351,21 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   (commit `f023531`), macro này chèn code annotation mà không ghi `detect_mismatch` nào. CI run
   36317622896, job `§8.2 windows: asan`: `cmake --preset asan`, build và `ctest --preset asan`
   xanh, `100% tests passed out of 63`.
+
+### NGHI-NGO-027 — clang-tidy 20.1.0 áp dụng `HeaderFilterRegex` của `.clang-tidy`
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** Với bản ghim clang-tidy 20.1.0, khoá `HeaderFilterRegex` trong `.clang-tidy` được
+  áp dụng, nên `tools/run_tidy.py` báo cả phát hiện trong header của dự án.
+- **Lý do nghi:** header của `engine/math` có nhiều biểu thức mà
+  `readability-math-missing-parentheses` phải báo, nhưng run_tidy chỉ báo ở tệp `.cpp`.
+- **Cách kiểm:** chạy `clang-tidy -p out/build/local
+  --checks='-*,readability-math-missing-parentheses' engine/math/quat.cpp` không có và có
+  `--header-filter` với đúng regex của `.clang-tidy`; `--dump-config` để xem khoá đã được đọc.
+- **Trạng thái:** đóng 2026-09-27. Khẳng định sai.
+- **Bằng chứng:** `--dump-config` in đúng `HeaderFilterRegex: '.*/(engine|game|tools|tests)/.*'`,
+  nhưng lệnh không có `--header-filter` báo 0 phát hiện trong `quat.hpp` và in
+  `Suppressed 4777 warnings (4777 in non-user code)`; cùng lệnh với
+  `--header-filter='.*/(engine|game|tools|tests)/.*'` báo 20 phát hiện trong `quat.hpp`. Từ nay
+  `run_tidy.py` đọc regex trong `.clang-tidy` và truyền lại qua `--header-filter`; lần chạy đầu
+  tìm ra 13 phát hiện đã bị giấu trong header của `engine/core`, sửa ở commit `c9b75f2`.

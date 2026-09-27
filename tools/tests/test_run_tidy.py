@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import unittest
+from pathlib import Path
 
 import run_tidy
 
@@ -28,6 +29,22 @@ class ProjectSourcesTest(FakeRepo):
             run_tidy.project_sources(self.root, database),
             ["engine/core/a.cpp", "tests/toolchain/features.cpp"],
         )
+
+
+class HeaderFilterTest(FakeRepo):
+    def test_reads_regex_from_config(self) -> None:
+        (self.root / ".clang-tidy").write_bytes(
+            b"Checks: '-*'\nHeaderFilterRegex: '.*/(engine|game)/.*'\nSystemHeaders: false\n")
+        self.assertEqual(run_tidy.header_filter(self.root), ".*/(engine|game)/.*")
+
+    def test_missing_regex_is_an_error(self) -> None:
+        (self.root / ".clang-tidy").write_bytes(b"Checks: '-*'\n")
+        with self.assertRaises(SystemExit):
+            run_tidy.header_filter(self.root)
+
+    def test_repository_config_has_a_regex(self) -> None:
+        root = Path(__file__).resolve().parents[2]
+        self.assertIn("engine", run_tidy.header_filter(root))
 
 
 if __name__ == "__main__":

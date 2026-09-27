@@ -76,16 +76,31 @@ def project_sources(root: pathlib.Path, database: pathlib.Path) -> list[str]:
     return sorted(found)
 
 
+def header_filter(root: pathlib.Path) -> str:
+    """HeaderFilterRegex của .clang-tidy, để truyền lại qua --header-filter.
+
+    NGHI-NGO-027: clang-tidy 20.1.0 bỏ qua khoá này khi đọc từ tệp cấu hình, nên nếu không truyền
+    lại thì mọi phát hiện trong header của dự án bị giấu đi.
+    """
+    config = root / ".clang-tidy"
+    for line in config.read_text(encoding="utf-8").splitlines():
+        match = re.fullmatch(r"HeaderFilterRegex:\s*'(.*)'\s*", line)
+        if match:
+            return match.group(1)
+    raise SystemExit(f"run_tidy: {config} thiếu HeaderFilterRegex")
+
+
 def run(root: pathlib.Path, build_dir: pathlib.Path, explicit: list[str] | None, jobs: int) -> int:
     database = build_dir / "compile_commands.json"
     if not database.is_file():
         raise SystemExit(f"run_tidy: không thấy {database}; configure preset trước")
     tidy = find_clang_tidy()
+    headers = f"--header-filter={header_filter(root)}"
     files = gatelib.select(project_sources(root, database), explicit)
 
     def one(path: str) -> tuple[str, int, str]:
         result = subprocess.run(
-            [tidy, "-p", str(build_dir), "--quiet", path],
+            [tidy, "-p", str(build_dir), "--quiet", headers, path],
             cwd=root,
             capture_output=True,
             text=True,
