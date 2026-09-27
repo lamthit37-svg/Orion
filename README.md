@@ -80,6 +80,10 @@ CHƠI chưa có.
   Android, Apple và Windows: gói lớn hơn bộ đệm bị bỏ chứ không bị cắt, ICMP từ lần gửi trước không
   thành lỗi nhận, chờ gói có hạn. Connect token (`docs/formats/connect_token.md`): auth ký Ed25519,
   gắn khoá X25519 của client và khoá định danh của cụm server, hạn tối đa 120 giây; gateway kiểm tại
-  chỗ, client đọc được mà không cần khoá của auth.
+  chỗ, client đọc được mà không cần khoá của auth. Gói dữ liệu của transport
+  (`docs/formats/transport.md`): tối đa 1200 byte, connection id tách khỏi địa chỉ, AEAD
+  ChaCha20-Poly1305 với nonce lấy từ số thứ tự và header làm associated data, cửa sổ chống replay
+  1024 gói.
 - Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest, bitstream, địa chỉ,
-  connect token), `tools/run_fuzz.py` và job fuzz đêm; ở mọi preset khác ctest chạy lại corpus.
+  connect token, gói dữ liệu), `tools/run_fuzz.py` và job fuzz đêm; ở mọi preset khác ctest chạy lại
+  corpus.
