@@ -74,7 +74,7 @@ CHƠI chưa có.
   preset bằng cách biên dịch với cấu hình ship. Đọc bất đồng bộ: luồng `orion-io` đọc qua VFS theo
   thứ tự gửi; luồng chính gửi và nhận không cấp phát, không chặn, và số yêu cầu chưa nhận có giới
   hạn.
-- `engine/net` (đang dựng): bitstream bit-packed, little-endian cho protocol
+- `engine/net`: bitstream bit-packed, little-endian cho protocol
   (`docs/formats/protocol.md`, ADR 0004) — số nguyên theo khoảng, số thực lượng tử hoá, byte và chuỗi
   có giới hạn; bên đọc là hàm toàn phần và buộc mỗi tin nhắn có đúng một cách mã hoá. Địa chỉ IPv4 và
   IPv6 kèm cổng: đọc chặt từ cấu hình, in theo dạng chuẩn RFC 5952. Socket UDP không chặn cho Linux,
@@ -93,6 +93,10 @@ CHƠI chưa có.
   nhận theo gói bằng bitfield 32 gói, gửi lại theo RTT, cắt tin nhắn tới 32 KiB thành mảnh 1 KiB;
   bộ nhớ tin nhắn tin cậy là ngân sách byte khai trước, bên gửi đặt tin nhắn vào bộ đệm nhận của
   bên kia nên bên nhận chép thẳng, không cấp phát.
+- `game/shared` (đang dựng): code hỗ trợ của protocol sinh ra — mảng, chuỗi và byte có cỡ tối đa
+  nằm ngay trong tin nhắn (không cấp phát), kiểu mạnh cho tick, tick rút gọn 16 bit khôi phục theo
+  tick tham chiếu (ADR 0002) và id nhân bản (ADR 0006), bộ ghi và bộ đọc có lỗi "dính" để code sinh
+  ra là một dãy lệnh thẳng.
 - Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest, bitstream, địa chỉ,
   connect token, gói dữ liệu, gói bắt tay, hai máy trạng thái của transport, lớp kênh tin nhắn),
   `tools/run_fuzz.py` và job fuzz đêm; ở mọi preset khác ctest chạy lại corpus.

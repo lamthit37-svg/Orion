@@ -11,6 +11,7 @@
 #
 # Quy ước tệp trong thư mục module:
 #   *.hpp, *.cpp ở gốc       header public và phần cài đặt
+#   <thư mục con>/*.hpp, *.cpp  chỉ game/shared: protocol/, movement/, combat/, defs/ (ARCH §2)
 #   detail/                  thứ nội bộ; module khác không include
 #   win/ linux/ android/ apple/  code riêng nền tảng, chỉ build trên nền tảng đó
 #   tests/*_test.cpp         unit test (GoogleTest), chạy bằng ctest
@@ -131,10 +132,21 @@ function(_orion_check_dependency target kind tier dep)
     endif()
 endfunction()
 
-# Gom tệp nguồn của module: gốc, detail/, và thư mục nền tảng của hệ đích.
-function(_orion_module_sources dir out_sources out_headers)
+# Gom tệp nguồn của module: gốc, detail/, và thư mục nền tảng của hệ đích. game/shared gom thêm
+# mọi thư mục con trừ tests/ (ARCH §2 chia nó theo mảng luật chơi).
+function(_orion_module_sources dir kind out_sources out_headers)
     set(globs "${dir}/*.cpp" "${dir}/detail/*.cpp")
     set(header_globs "${dir}/*.hpp")
+    if(kind STREQUAL "shared")
+        file(GLOB children LIST_DIRECTORIES true CONFIGURE_DEPENDS "${dir}/*")
+        foreach(child IN LISTS children)
+            get_filename_component(name "${child}" NAME)
+            if(IS_DIRECTORY "${child}" AND NOT name STREQUAL "tests" AND NOT name STREQUAL "detail")
+                list(APPEND globs "${child}/*.cpp")
+                list(APPEND header_globs "${child}/*.hpp")
+            endif()
+        endforeach()
+    endif()
     foreach(platform IN LISTS ORION_PLATFORM_DIRS)
         list(APPEND globs "${dir}/${platform}/*.cpp")
         if(APPLE)
@@ -173,7 +185,7 @@ function(orion_add_module)
         message(FATAL_ERROR "orion_add_module: tham số lạ ${arg_UNPARSED_ARGUMENTS}")
     endif()
     _orion_module_identity("${CMAKE_CURRENT_SOURCE_DIR}" target kind tier rel)
-    _orion_module_sources("${CMAKE_CURRENT_SOURCE_DIR}" sources headers)
+    _orion_module_sources("${CMAKE_CURRENT_SOURCE_DIR}" ${kind} sources headers)
     _orion_header_check(${target} "${rel}" "${headers}" header_check)
 
     add_library(${target} STATIC ${sources} ${header_check})

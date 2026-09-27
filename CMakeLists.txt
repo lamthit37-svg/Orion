@@ -9,4 +9,5 @@ enable_testing()
 
 add_subdirectory(tools)
 add_subdirectory(engine)
+add_subdirectory(game)
 add_subdirectory(tests)
