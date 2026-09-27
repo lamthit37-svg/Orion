@@ -14,7 +14,6 @@
 
 #include <zdict.h>
 #include <zstd.h>
-#include <zstd_errors.h>
 
 #include <algorithm>
 #include <array>
@@ -189,9 +188,10 @@ Result<void> PakBuilder::add(const VirtualPath& path, const std::span<const std:
             : ZSTD_compress_usingCDict(encoder_->context, compressed.data(), compressed.size(),
                                        content.data(), content.size(),
                                        encoder_->dictionaries[dictionary - 1U]);
+    // Đích đã đủ ZSTD_compressBound nên lỗi ở đây chỉ còn là hết bộ nhớ hay tham số hỏng.
+    // ZSTD_getErrorCode không được gọi: từ v1.5.7 nó chuyển từ zstd_errors.h sang zstd.h.
     if (ZSTD_isError(size) != 0U) {
-        return fail(ErrorCode::Internal, "pak: Zstd nén thất bại",
-                    static_cast<i64>(ZSTD_getErrorCode(size)));
+        return fail(ErrorCode::Internal, "pak: Zstd nén thất bại");
     }
     Pending pending;
     pending.original_size = content.size();
