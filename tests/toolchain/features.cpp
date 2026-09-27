@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <expected>
 #include <format>
+#include <numbers>
 #include <optional>
 #include <ranges>
 #include <source_location>
@@ -66,6 +67,7 @@ static_assert(at_least(__cpp_lib_unreachable, 202202L), "std::unreachable");
 static_assert(at_least(__cpp_lib_source_location, 201907L),
               "std::source_location cho ORION_ASSERT");
 static_assert(at_least(__cpp_lib_format, 201907L), "std::format cho log");
+static_assert(at_least(__cpp_lib_math_constants, 201907L), "std::numbers::pi cho engine/math");
 static_assert(at_least(__cpp_lib_concepts, 202002L), "<concepts>");
 static_assert(at_least(__cpp_lib_ranges, 201911L), "<ranges>");
 static_assert(at_least(__cpp_lib_three_way_comparison, 201907L), "<compare>");
