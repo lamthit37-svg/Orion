@@ -61,22 +61,26 @@ class DiscoverTest(unittest.TestCase):
 
 
 class CommandTest(unittest.TestCase):
+    # Giá trị mong đợi đi qua str(Path) vì Windows viết đường dẫn bằng dấu \.
+    BINARY = pathlib.Path("/b/fuzz_x")
+    WORK = pathlib.Path("/w/x")
+
     def test_fuzz_command_writes_only_to_work_corpus(self) -> None:
-        command = run_fuzz.fuzz_command(pathlib.Path("/b/fuzz_x"), 600, pathlib.Path("/w/x"),
-                                        pathlib.Path("/r/tests/fuzz/corpus/x"), "/a/x-")
-        self.assertEqual(command[0], "/b/fuzz_x")
+        seeds = pathlib.Path("/r/tests/fuzz/corpus/x")
+        command = run_fuzz.fuzz_command(self.BINARY, 600, self.WORK, seeds, "/a/x-")
+        self.assertEqual(command[0], str(self.BINARY))
         self.assertIn("-max_total_time=600", command)
         self.assertIn(f"-timeout={run_fuzz.TIMEOUT_SECONDS}", command)
         self.assertIn(f"-rss_limit_mb={run_fuzz.RSS_LIMIT_MB}", command)
         self.assertIn("-artifact_prefix=/a/x-", command)
         # libFuzzer ghi input mới vào thư mục corpus đầu tiên: phải là corpus làm việc.
-        self.assertEqual(command[-2:], ["/w/x", "/r/tests/fuzz/corpus/x"])
+        self.assertEqual(command[-2:], [str(self.WORK), str(seeds)])
 
     def test_merge_command_targets_fresh_directory(self) -> None:
-        command = run_fuzz.merge_command(pathlib.Path("/b/fuzz_x"), pathlib.Path("/w/x.merged"),
-                                         pathlib.Path("/w/x"))
+        merged = pathlib.Path("/w/x.merged")
+        command = run_fuzz.merge_command(self.BINARY, merged, self.WORK)
         self.assertEqual(command[1], "-merge=1")
-        self.assertEqual(command[-2:], ["/w/x.merged", "/w/x"])
+        self.assertEqual(command[-2:], [str(merged), str(self.WORK)])
 
 
 @unittest.skipIf(os.name == "nt", "chương trình giả cần shebang và bit thực thi của POSIX")
