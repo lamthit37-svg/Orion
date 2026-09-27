@@ -66,6 +66,10 @@ CHƠI chưa có.
   tích, mỗi entry nén Zstd riêng (có dictionary) và được băm trước khi giải nén; đọc từ nhiều luồng,
   không cấp phát sau khi dành bộ đệm. Bộ ghi pak và huấn luyện dictionary chỉ có ở DEV và tool.
   Manifest đã ký Ed25519 (`docs/formats/manifest.md`): người ký phải nằm trong danh sách khoá tin
-  cậy và chữ ký được kiểm trước khi đọc bản ghi pak; bộ ghi manifest chỉ có ở DEV và tool.
+  cậy và chữ ký được kiểm trước khi đọc bản ghi pak; bộ ghi manifest chỉ có ở DEV và tool. VFS:
+  mount pak của manifest đã ký (kiểm cỡ và `index_hash` khi mount), mount sau che mount trước, đọc
+  từ nhiều luồng; thư mục tệp rời và pak ngoài manifest chỉ có ở DEV, và
+  `engine/io/tests/ship_api_check.cpp` giữ luật đó ở mọi preset bằng cách biên dịch với cấu hình
+  ship.
 - Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest), `tools/run_fuzz.py`
   và job fuzz đêm; ở mọi preset khác ctest chạy lại corpus.

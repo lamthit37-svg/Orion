@@ -131,12 +131,14 @@ function(_orion_sanitizer_flags out_var)
     set(${out_var} "${flags}" PARENT_SCOPE)
 endfunction()
 
-# orion_apply_flags(<target> [EXCEPTIONS])
+# orion_apply_flags(<target> [EXCEPTIONS] [SHIP])
 #
 # EXCEPTIONS chỉ dành cho tools/ và module bọc thư viện bắt buộc exception, và exception phải được
 # bắt hết ở ranh giới của module đó (CLAUDE.md X.3).
+# SHIP dịch target với macro cấu hình của bản ship ở mọi preset. Chỉ dùng cho target chỉ biên dịch,
+# không link vào đâu (kiểm API của bản ship, X.9): trộn với object của cấu hình khác là vi phạm ODR.
 function(orion_apply_flags target)
-    cmake_parse_arguments(PARSE_ARGV 1 arg "EXCEPTIONS" "" "")
+    cmake_parse_arguments(PARSE_ARGV 1 arg "EXCEPTIONS;SHIP" "" "")
     if(arg_UNPARSED_ARGUMENTS)
         message(FATAL_ERROR "orion_apply_flags: tham số lạ ${arg_UNPARSED_ARGUMENTS}")
     endif()
@@ -192,8 +194,13 @@ function(orion_apply_flags target)
     endif()
 
     # Macro cấu hình mang giá trị 0 hoặc 1 để dùng với #if; -Wundef bắt chỗ quên định nghĩa.
-    target_compile_definitions(${target} PRIVATE
-        ORION_SHIP=$<BOOL:${ORION_SHIP}>
-        ORION_DEV_TOOLS=$<NOT:$<BOOL:${ORION_SHIP}>>
-        ORION_PROFILE=$<BOOL:${ORION_PROFILE}>)
+    if(arg_SHIP)
+        target_compile_definitions(${target} PRIVATE
+            ORION_SHIP=1 ORION_DEV_TOOLS=0 ORION_PROFILE=0)
+    else()
+        target_compile_definitions(${target} PRIVATE
+            ORION_SHIP=$<BOOL:${ORION_SHIP}>
+            ORION_DEV_TOOLS=$<NOT:$<BOOL:${ORION_SHIP}>>
+            ORION_PROFILE=$<BOOL:${ORION_PROFILE}>)
+    endif()
 endfunction()

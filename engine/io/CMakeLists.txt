@@ -8,3 +8,10 @@ if(TARGET engine_io_tests)
     target_compile_definitions(engine_io_tests PRIVATE
         ORION_PAK_SEEDS_DIR="${PROJECT_SOURCE_DIR}/tests/fuzz/corpus/io_pak_index")
 endif()
+# Luật X.9 cho bản ship, kiểm ở mọi preset: tests/ship_api_check.cpp biên dịch với macro cấu hình
+# của bản ship và không link vào đâu (CI không build preset ship).
+if(TARGET engine_io_tests)
+    add_library(engine_io_ship_api_check OBJECT tests/ship_api_check.cpp)
+    orion_apply_flags(engine_io_ship_api_check SHIP)
+    target_link_libraries(engine_io_ship_api_check PRIVATE engine_io)
+endif()
