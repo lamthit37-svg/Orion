@@ -226,9 +226,13 @@ function(_orion_module_tests target rel exceptions_flag test_deps test_external)
         target_link_libraries(${target}_tests PRIVATE
             ${common_test_libs} GTest::gtest GTest::gtest_main)
         if(NOT CMAKE_CROSSCOMPILING)
+            # Liệt kê test lúc ctest chạy (PRE_TEST) từng quá 5 giây mặc định trên runner Windows
+            # (CI run 36330676036, job windows ubsan: engine_core_tests hết giờ ở bước discover nên
+            # cả ctest dừng). 60 giây vẫn dưới TIMEOUT của từng test.
             gtest_discover_tests(${target}_tests
                 TEST_PREFIX "${rel}:"
                 DISCOVERY_MODE PRE_TEST
+                DISCOVERY_TIMEOUT 60
                 PROPERTIES TIMEOUT 120)
         endif()
     endif()
