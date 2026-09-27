@@ -6,6 +6,7 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <limits>
@@ -179,6 +180,79 @@ TEST(BitReader, TruncatedInputIsOutOfRange) {
     const Result<bool> empty = BitReader({}).read_bool();
     ASSERT_FALSE(empty.has_value());
     EXPECT_EQ(empty.error().code(), ErrorCode::OutOfRange);
+}
+
+// write_bytes và read_bytes chép cả khối; kết quả phải trùng từng bit với cách ghi từng byte bằng
+// write_bits(b, 8), ở mọi độ lệch 0..7, kể cả khi bộ đệm ghi chứa rác từ trước.
+TEST(BitStream, BytesMatchByteByByteEncodingAtEveryOffset) {
+    constexpr usize kMax = 300;
+    for (u32 offset = 0; offset < 8; ++offset) {
+        for (const usize size : {usize{0}, usize{1}, usize{2}, usize{7}, kMax}) {
+            std::vector<std::byte> data(size);
+            for (usize i = 0; i < size; ++i) {
+                data[i] = static_cast<std::byte>(((i * 37U) + offset) & 0xFFU);
+            }
+            std::array<std::byte, 320> block_buffer{};
+            std::array<std::byte, 320> reference_buffer{};
+            block_buffer.fill(std::byte{0xA5});
+            reference_buffer.fill(std::byte{0x5A});
+            BitWriter block(block_buffer);
+            BitWriter reference(reference_buffer);
+            const u64 prefix = 0x5BU & ((u64{1} << offset) - 1);
+            block.write_bits(prefix, offset);
+            reference.write_bits(prefix, offset);
+            block.write_bytes(data, kMax);
+            reference.write_bits(size, bits_for(kMax));
+            for (const std::byte b : data) {
+                reference.write_bits(std::to_integer<u64>(b), 8);
+            }
+            block.write_bool(true);
+            reference.write_bool(true);
+            ASSERT_FALSE(block.overflowed() || reference.overflowed());
+            ASSERT_EQ(hex(block.written()), hex(reference.written()))
+                << "lệch " << offset << " bit, " << size << " byte";
+
+            BitReader reader(block.written());
+            EXPECT_EQ(reader.read_bits(offset).value_or(~u64{0}), prefix);
+            std::array<std::byte, kMax> out{};
+            const Result<usize> read = reader.read_bytes(out, kMax);
+            ASSERT_EQ(read.value_or(kMax + 1), size);
+            EXPECT_TRUE(std::ranges::equal(std::span(out).first(size), data));
+            EXPECT_TRUE(reader.read_bool().value_or(false));
+            EXPECT_TRUE(reader.finish().has_value());
+        }
+    }
+}
+
+// Thiếu một byte ở bất kỳ độ lệch nào: bên ghi báo tràn, bên đọc trả OutOfRange mà không dời vị
+// trí.
+TEST(BitStream, BytesOneByteShortFailAtEveryOffset) {
+    const std::array data = {std::byte{1}, std::byte{2}, std::byte{3}};
+    for (u32 offset = 0; offset < 8; ++offset) {
+        // Độ dài 2 bit (max_size 3) rồi 24 bit dữ liệu.
+        const usize bits = offset + 2 + 24;
+        std::vector<std::byte> exact((bits + 7) / 8);
+        BitWriter fits(exact);
+        fits.write_bits(0, offset);
+        fits.write_bytes(data, 3);
+        ASSERT_FALSE(fits.overflowed()) << offset;
+        EXPECT_EQ(fits.bit_count(), bits);
+
+        std::vector<std::byte> short_buffer(exact.size() - 1);
+        BitWriter tight(short_buffer);
+        tight.write_bits(0, offset);
+        tight.write_bytes(data, 3);
+        EXPECT_TRUE(tight.overflowed()) << offset;
+
+        BitReader reader(std::span<const std::byte>(exact).first(exact.size() - 1));
+        ASSERT_TRUE(reader.read_bits(offset).has_value());
+        const usize before = reader.bits_remaining();
+        std::array<std::byte, 3> out{};
+        const Result<usize> read = reader.read_bytes(out, 3);
+        ASSERT_FALSE(read.has_value()) << offset;
+        EXPECT_EQ(read.error().code(), ErrorCode::OutOfRange);
+        EXPECT_EQ(reader.bits_remaining(), before);
+    }
 }
 
 TEST(BitReader, StringsMustBeUtf8) {

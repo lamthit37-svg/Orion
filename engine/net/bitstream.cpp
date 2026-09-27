@@ -91,9 +91,28 @@ void BitWriter::write_quantized(const f64 value, const Quantization& quantizatio
 void BitWriter::write_bytes(const std::span<const std::byte> bytes, const usize max_size) noexcept {
     ORION_ASSERT(bytes.size() <= max_size, "{} byte vượt {}", bytes.size(), max_size);
     write_bits(bytes.size(), bits_for(max_size));
-    for (const std::byte b : bytes) {
-        write_bits(std::to_integer<u64>(b), 8);
+    // Cùng kết quả với write_bits(b, 8) cho từng byte, nhưng chép cả khối: thẳng hàng byte thì chép
+    // thẳng, lệch thì mỗi byte vào chia làm hai nửa ở hai byte ra.
+    if (overflowed_ || bytes.size() > ((buffer_.size() * 8) - bit_position_) / 8) {
+        overflowed_ = true;
+        return;
     }
+    const usize first = bit_position_ / 8;
+    const auto shift = static_cast<u32>(bit_position_ % 8);
+    if (shift == 0) {
+        std::ranges::copy(bytes, buffer_.begin() + static_cast<std::ptrdiff_t>(first));
+    } else {
+        // Byte dở giữ `shift` bit thấp đã ghi.
+        auto carry = static_cast<u32>(std::to_integer<u64>(buffer_[first]) & low_mask(shift));
+        for (usize i = 0; i < bytes.size(); ++i) {
+            const u32 value = std::to_integer<u32>(bytes[i]);
+            buffer_[first + i] = static_cast<std::byte>((carry | (value << shift)) & 0xFFU);
+            carry = value >> (8U - shift);
+        }
+        // Vị trí cuối còn lệch `shift` bit nên byte này nằm trong bộ đệm.
+        buffer_[first + bytes.size()] = static_cast<std::byte>(carry);
+    }
+    bit_position_ += bytes.size() * 8;
 }
 
 void BitWriter::write_string(const std::string_view text, const usize max_size) noexcept {
@@ -171,10 +190,23 @@ Result<usize> BitReader::read_bytes(const std::span<std::byte> out, const usize 
         bit_position_ = start;
         return fail(ErrorCode::OutOfRange, "bitstream: thiếu byte", static_cast<i64>(*size));
     }
-    for (usize i = 0; i < *size; ++i) {
-        out[i] = static_cast<std::byte>(*read_bits(8));
+    // Cùng kết quả với read_bits(8) cho từng byte: thẳng hàng byte thì chép thẳng, lệch thì ghép
+    // hai byte vào thành một byte ra. Byte thứ hai của lần ghép cuối nằm trong dữ liệu, vì vị trí
+    // cuối còn lệch `shift` bit.
+    const auto count = static_cast<usize>(*size);
+    const usize first = bit_position_ / 8;
+    const auto shift = static_cast<u32>(bit_position_ % 8);
+    if (shift == 0) {
+        std::ranges::copy(data_.subspan(first, count), out.begin());
+    } else {
+        for (usize i = 0; i < count; ++i) {
+            const u32 low = std::to_integer<u32>(data_[first + i]) >> shift;
+            const u32 high = std::to_integer<u32>(data_[first + i + 1]) << (8U - shift);
+            out[i] = static_cast<std::byte>((low | high) & 0xFFU);
+        }
     }
-    return static_cast<usize>(*size);
+    bit_position_ += count * 8;
+    return count;
 }
 
 Result<usize> BitReader::read_string(const std::span<char> out, const usize max_size) noexcept {
