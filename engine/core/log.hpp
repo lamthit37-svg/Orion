@@ -43,9 +43,9 @@ enum class LogLevel : u8 {
 // Trường nào không có thì để trống; khởi tạo mặc định tường minh để designated initializer chỉ cần
 // ghi trường có mặt, ví dụ `{.zone = 3, .tick = t}`.
 struct LogFields {
-    std::optional<u32> zone{};
-    std::optional<u64> tick{};
-    std::optional<u64> entity{};
+    std::optional<u32> zone = std::nullopt;
+    std::optional<u64> tick = std::nullopt;
+    std::optional<u64> entity = std::nullopt;
 };
 
 // Một bản ghi đã định dạng xong. Cỡ cố định để đi qua hàng đợi mà không cấp phát.
@@ -193,7 +193,7 @@ public:
     [[nodiscard]] u64 take_suppressed() noexcept { return std::exchange(suppressed_, 0); }
 
 private:
-    const MonotonicClock& clock_;
+    const MonotonicClock* clock_;  // không null, sống lâu hơn đối tượng này
     Duration interval_;
     MonoTime window_start_;
     u32 burst_;

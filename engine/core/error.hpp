@@ -16,7 +16,7 @@
 namespace orion {
 
 // Giá trị tường minh và không bao giờ đổi, vì mã lỗi đi qua mạng và vào log (CLAUDE.md X.3).
-enum class ErrorCode : u16 {
+enum class ErrorCode : u8 {
     Cancelled = 1,           // bên gọi đã huỷ thao tác
     InvalidArgument = 2,     // đầu vào sai định dạng, dù trạng thái hệ thống thế nào
     OutOfRange = 3,          // đầu vào đúng định dạng nhưng ngoài khoảng cho phép
@@ -46,6 +46,7 @@ public:
     // Không explicit: viết thẳng literal ở chỗ gọi, `fail(ErrorCode::NotFound, "pak: thiếu
     // entry")`.
     template <usize N>
+    // NOLINTNEXTLINE(*-avoid-c-arrays,*-pro-bounds-array-to-pointer-decay): chỉ nhận literal chuỗi.
     consteval ErrorContext(const char (&text)[N]) noexcept : text_(text), length_(N - 1) {
         static_assert(N - 1 <= kMaxLength, "ngữ cảnh lỗi phải ngắn (CLAUDE.md X.5)");
     }

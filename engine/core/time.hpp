@@ -132,13 +132,13 @@ struct CivilDate {
 [[nodiscard]] constexpr CivilDate civil_from_days(const i64 days_since_epoch) noexcept {
     const i64 z = days_since_epoch + 719'468;
     const i64 era = (z >= 0 ? z : z - 146'096) / 146'097;
-    const auto doe = static_cast<u32>(z - era * 146'097);
-    const u32 yoe = (doe - doe / 1'460 + doe / 36'524 - doe / 146'096) / 365;
-    const u32 doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    const u32 mp = (5 * doy + 2) / 153;
-    const u32 day = doy - (153 * mp + 2) / 5 + 1;
+    const auto doe = static_cast<u32>(z - (era * 146'097));
+    const u32 yoe = (((doe - (doe / 1'460)) + (doe / 36'524)) - (doe / 146'096)) / 365;
+    const u32 doy = doe - (((365 * yoe) + (yoe / 4)) - (yoe / 100));
+    const u32 mp = ((5 * doy) + 2) / 153;
+    const u32 day = (doy - (((153 * mp) + 2) / 5)) + 1;
     const u32 month = mp < 10 ? mp + 3 : mp - 9;
-    const i64 year = static_cast<i64>(yoe) + era * 400 + (month <= 2 ? 1 : 0);
+    const i64 year = static_cast<i64>(yoe) + (era * 400) + (month <= 2 ? 1 : 0);
     return {year, month, day};
 }
 
@@ -229,8 +229,8 @@ struct std::formatter<orion::core::WallTime> : std::formatter<std::string_view> 
         constexpr orion::i64 kMicrosPerDay = 86'400'000'000;
         const orion::i64 us = time.unix_microseconds();
         const orion::i64 days =
-            us >= 0 ? us / kMicrosPerDay : -((-us + kMicrosPerDay - 1) / kMicrosPerDay);
-        const orion::i64 in_day = us - days * kMicrosPerDay;
+            us >= 0 ? us / kMicrosPerDay : -((-us + (kMicrosPerDay - 1)) / kMicrosPerDay);
+        const orion::i64 in_day = us - (days * kMicrosPerDay);
         const orion::core::CivilDate date = orion::core::civil_from_days(days);
         const orion::i64 seconds = in_day / 1'000'000;
         return std::format_to(ctx.out(), "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}.{:06}Z", date.year,

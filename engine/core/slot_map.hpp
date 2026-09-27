@@ -7,7 +7,7 @@
 // - Giá trị nằm liền nhau trong values(), duyệt tuần tự; remove đổi chỗ phần tử cuối vào lỗ trống,
 //   nên thứ tự duyệt chỉ phụ thuộc chuỗi thao tác, không phụ thuộc địa chỉ (X.11).
 // - Handle của đối tượng đã xoá không bao giờ trỏ nhầm sang đối tượng mới: generation của ô tăng
-//   mỗi lần xoá. Ô chạm kMaxGeneration thì bị loại vĩnh viễn thay vì quay vòng về 0.
+//   mỗi lần xoá. Ô chạm MaxGeneration thì bị loại vĩnh viễn thay vì quay vòng về 0.
 //
 // Độ phức tạp: insert, remove, get đều O(1). Luồng: không đồng bộ; mỗi SlotMap thuộc một luồng.
 
@@ -23,12 +23,12 @@
 
 namespace orion::core {
 
-template <class T, class Tag = T, u32 kMaxGeneration = std::numeric_limits<u32>::max()>
+template <class T, class Tag = T, u32 MaxGeneration = std::numeric_limits<u32>::max()>
 class SlotMap {
 public:
     using HandleType = Handle<Tag>;
 
-    static_assert(kMaxGeneration >= 1);
+    static_assert(MaxGeneration >= 1);
 
     explicit SlotMap(const u32 capacity) : slots_(capacity) {
         dense_.reserve(capacity);
@@ -87,7 +87,7 @@ public:
         dense_.pop_back();
         dense_to_slot_.pop_back();
         slot.occupied = false;
-        if (slot.generation == kMaxGeneration) {
+        if (slot.generation == MaxGeneration) {
             ++retired_;  // Không quay vòng generation: ô này không bao giờ được cấp lại.
         } else {
             ++slot.generation;

@@ -48,11 +48,11 @@ TEST(Error, FormatsForLogs) {
 }
 
 TEST(Error, EveryCodeHasANameAndUnknownValuesDoNotAssert) {
-    for (u16 raw = 1; raw <= 16; ++raw) {
+    for (u8 raw = 1; raw <= 16; ++raw) {
         EXPECT_NE(to_string(static_cast<ErrorCode>(raw)), "Unknown") << "mã " << raw;
     }
     EXPECT_EQ(to_string(static_cast<ErrorCode>(0)), "Unknown");
-    EXPECT_EQ(to_string(static_cast<ErrorCode>(999)), "Unknown");
+    EXPECT_EQ(to_string(static_cast<ErrorCode>(255)), "Unknown");
 }
 
 TEST(Error, CodesKeepTheirWireValues) {

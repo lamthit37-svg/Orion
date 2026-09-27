@@ -45,7 +45,7 @@ public:
         if (memory == nullptr) {
             return nullptr;
         }
-        return ::new (memory) T(std::forward<Args>(args)...);
+        return std::construct_at(static_cast<T*>(memory), std::forward<Args>(args)...);
     }
 
     // Mảng `count` phần tử T khởi tạo giá trị (về 0 với kiểu số), hoặc span rỗng khi hết chỗ.

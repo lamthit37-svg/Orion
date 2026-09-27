@@ -253,10 +253,10 @@ void Logger::stop() noexcept {
 
 LogRateLimiter::LogRateLimiter(const MonotonicClock& clock, const Duration interval,
                                const u32 burst) noexcept
-    : clock_(clock), interval_(interval), window_start_(clock.now()), burst_(burst) {}
+    : clock_(&clock), interval_(interval), window_start_(clock.now()), burst_(burst) {}
 
 bool LogRateLimiter::allow() noexcept {
-    const MonoTime now = clock_.now();
+    const MonoTime now = clock_->now();
     if (now - window_start_ >= interval_) {
         window_start_ = now;
         used_ = 0;
