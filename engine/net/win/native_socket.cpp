@@ -141,8 +141,8 @@ Result<std::intptr_t> open_udp(const Address& local) noexcept {
         return socket_error(WSAGetLastError(), "net: WSASocketW thất bại");
     }
     u_long non_blocking = 1;
-    // FIONBIO là unsigned long (có bit IOC_IN), tham số của ioctlsocket là long: phép đổi giữ nguyên
-    // mẫu bit, vì C++20 định nghĩa phép đổi số nguyên theo modulo.
+    // FIONBIO là unsigned long (có bit IOC_IN), tham số của ioctlsocket là long: phép đổi giữ
+    // nguyên mẫu bit, vì C++20 định nghĩa phép đổi số nguyên theo modulo.
     if (ioctlsocket(udp, static_cast<long>(FIONBIO), &non_blocking) != 0) {
         return close_with(udp, "net: không đặt được FIONBIO");
     }
