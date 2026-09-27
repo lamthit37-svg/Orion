@@ -106,7 +106,10 @@ event ItemGranted = 1 {
 ```
 
 - `version N`: `kProtocolVersion`, từ 1 tới 2^32 − 1; đúng một lần trong cả protocol. Đổi bất kỳ
-  schema nào thì phải tăng số này (CLAUDE.md X.10).
+  schema nào thì phải tăng số này (CLAUDE.md X.10), và số này không bao giờ giảm. Cổng
+  `tools/check_protocol_version.py` trong CI so với commit gốc theo code sinh ra: đổi tên, id,
+  kênh, trường, khoảng hay giới hạn tần suất cần tăng; sửa comment, chia, gộp hay đổi tên tệp thì
+  không, vì mỗi lần tăng buộc mọi client cập nhật (ADR 0004 mục 5).
 - `enum Tên : u8|u16|u32 { TênGiáTrị = số ... }`: ít nhất một giá trị; mọi giá trị có số tường
   minh, vừa kiểu nền; không trùng tên, không trùng số.
 - `struct Tên { trường: kiểu ... }`: ít nhất một trường; không trùng tên trường; không chứa chính

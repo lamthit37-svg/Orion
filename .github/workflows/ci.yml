@@ -26,6 +26,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Đủ lịch sử để check_protocol_version đọc được commit gốc.
+          fetch-depth: 0
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.13"
@@ -33,6 +36,13 @@ jobs:
       - run: python tools/check_style.py
       - run: python tools/check_layers.py
       - run: python tools/check_tracked.py
+      - name: Schema protocol đổi thì kProtocolVersion phải tăng (CLAUDE.md X.10)
+        env:
+          # Pull request: commit gốc của nhánh đích; lần đẩy: commit trước lần đẩy. Nhánh mới và chạy
+          # tay không có cả hai, nên so với merge-base của HEAD và nhánh mặc định.
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          FALLBACK: origin/${{ github.event.repository.default_branch }}
+        run: python tools/check_protocol_version.py --base "$BASE" --fallback "$FALLBACK"
       - run: python -m unittest discover -s tools/tests -t tools
 
   linux:

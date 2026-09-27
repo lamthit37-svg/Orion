@@ -254,6 +254,8 @@ class Protocol:
     structs: tuple[Struct, ...]
     messages: tuple[Message, ...]
     events: tuple[EventDecl, ...]
+    # Nơi khai `version`, để cổng kiểm phiên bản báo lỗi đúng dòng.
+    version_location: Location = Location("<protocol>", 1, 1)
 
     def lookup(self, name: str) -> Enum | Struct:
         for decl in (*self.enums, *self.structs):
@@ -691,7 +693,7 @@ def _validate(decls: _Declarations) -> Protocol:
                   "id của event")
     protocol = Protocol(version, tuple(decls.enums), tuple(decls.structs),
                         tuple(sorted(decls.messages, key=lambda m: m.id)),
-                        tuple(sorted(decls.events, key=lambda e: e.id)))
+                        tuple(sorted(decls.events, key=lambda e: e.id)), version_location)
     for decl in (*protocol.structs, *protocol.messages, *protocol.events):
         for field in decl.fields:
             _resolve(protocol, field.type)

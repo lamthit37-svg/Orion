@@ -164,6 +164,7 @@ EngineGAME/
 │   ├── check_style.py — cổng hiện có (hiến pháp V.5), giữ nguyên đường dẫn
 │   ├── check_layers.py — luật include ở CLAUDE.md X.1
 │   ├── check_tracked.py — tệp nguồn bị .gitignore nuốt
+│   ├── check_protocol_version.py — schema protocol đổi thì kProtocolVersion phải tăng (X.10)
 │   ├── gatelib.py — phần dùng chung của ba cổng trên
 │   ├── run_tidy.py — chạy clang-tidy bản ghim trên compile database (X.1)
 │   ├── run_fuzz.py — chạy fuzz target như job fuzz đêm của CI (X.4, X.16.9)

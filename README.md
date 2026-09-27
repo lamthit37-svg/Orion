@@ -29,6 +29,7 @@ Cần có:
 | Race detector trên Linux | `cmake --workflow --preset linux-tsan` |
 | Coverage (X.4) | build và `ctest --preset linux-coverage`, rồi `tools/check_coverage.py out/build/linux-coverage` |
 | Cổng kiểm | `python3.13 tools/check_style.py`, `check_layers.py`, `check_tracked.py` |
+| Phiên bản protocol (X.10) | `python3.13 tools/check_protocol_version.py --base origin/main` |
 | Sửa format tự động | `python3.13 tools/check_style.py --fix` |
 
 Trên Windows gọi script bằng `py` thay cho `python3.13` (hiến pháp VIII). Cổng kiểm cũng chạy tự
@@ -42,7 +43,8 @@ Repo đang được dựng theo ARCH. Mục này liệt kê đúng những gì �
 CHƠI chưa có.
 
 - Tài liệu nền, ADR 0001–0012 (0009–0012 chờ xác nhận) và sổ nghi ngờ.
-- Cổng kiểm `check_style`, `check_layers`, `check_tracked`, kèm unittest.
+- Cổng kiểm `check_style`, `check_layers`, `check_tracked`, kèm unittest; trong CI thêm
+  `check_protocol_version`: schema protocol đổi nghĩa so với commit gốc thì `version` phải tăng.
 - Khung CMake: preset của ARCH §6, toolchain và triplet vcpkg riêng, `orion_add_module()`,
   `tests/toolchain/features.cpp` (số đo từng toolchain ở NGHI-NGO-009).
 - CI GitHub Actions theo ARCH §8 (ADR 0009).
