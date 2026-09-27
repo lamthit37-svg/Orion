@@ -85,8 +85,10 @@ CHƠI chưa có.
   tay kiểm token sau một cookie không trạng thái (mọi gói trả lời trước khi xác thực nhỏ hơn gói gây
   ra nó), trao khoá X25519 có chữ ký của server; sau đó mỗi gói tối đa 1200 byte được mã hoá
   ChaCha20-Poly1305 với nonce lấy từ số thứ tự, có cửa sổ chống replay 1024 gói, và connection id
-  tách khỏi địa chỉ nên client đổi mạng không mất kết nối. Client và server là máy trạng thái không
-  chạm socket, test tất định trên mạng giả. Lớp kênh tin nhắn (`docs/formats/channels.md`):
+  tách khỏi địa chỉ nên client đổi mạng không mất kết nối. Mọi loại gói server nhận có giới hạn tần
+  suất: REQUEST cho cả server, RESPONSE theo địa chỉ nguồn đã được cookie chứng minh và cho cả
+  server, gói dữ liệu đã xác thực theo kết nối. Client và server là máy trạng thái không chạm
+  socket, test tất định trên mạng giả. Lớp kênh tin nhắn (`docs/formats/channels.md`):
   `unreliable`, `sequenced`, `reliable_ordered`, `reliable_unordered` trên cùng một kết nối; xác
   nhận theo gói bằng bitfield 32 gói, gửi lại theo RTT, cắt tin nhắn tới 32 KiB thành mảnh 1 KiB;
   bộ nhớ tin nhắn tin cậy là ngân sách byte khai trước, bên gửi đặt tin nhắn vào bộ đệm nhận của

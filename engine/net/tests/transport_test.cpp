@@ -9,6 +9,7 @@
 #include "engine/core/types.hpp"
 #include "engine/crypto/crypto.hpp"
 #include "engine/crypto/key_exchange.hpp"
+#include "engine/crypto/short_hash.hpp"
 #include "engine/crypto/sign.hpp"
 #include "engine/net/address.hpp"
 #include "engine/net/client_transport.hpp"
@@ -17,6 +18,7 @@
 #include "engine/net/handshake.hpp"
 #include "engine/net/outbox.hpp"
 #include "engine/net/packet.hpp"
+#include "engine/net/rate_limit.hpp"
 #include "engine/net/secure_channel.hpp"
 #include "engine/net/server_transport.hpp"
 
@@ -73,15 +75,49 @@ struct ServerLog {
 // Mọi thành viên công khai: thân TEST_F là lớp con, và fixture không có bất biến nào cần giấu.
 class TransportTest : public ::testing::Test {
 public:
-    [[nodiscard]] ServerTransport make_server() const {
-        Result<ServerTransport> created =
-            ServerTransport::create({.identity = identity,
-                                     .token_signers = {auth.public_key},
-                                     .protocol_version = kVersion,
-                                     .max_connections = 4},
-                                    now);
+    // Giới hạn tần suất mặc định, khoá hash cố định để bảng giới hạn theo địa chỉ tất định (X.4).
+    [[nodiscard]] ServerConfig base_config() const {
+        ServerConfig config{.identity = identity,
+                            .token_signers = {auth.public_key},
+                            .protocol_version = kVersion,
+                            .max_connections = 4};
+        crypto::ShortHashKey key;
+        key.mutable_view()[0] = std::byte{0x77};
+        config.address_hash_key = key;
+        return config;
+    }
+
+    [[nodiscard]] ServerTransport make_server(ServerConfig config) const {
+        Result<ServerTransport> created = ServerTransport::create(std::move(config), now);
         ORION_VERIFY(created.has_value(), "không tạo được server của test");
         return std::move(*created);
+    }
+
+    // REQUEST rồi RESPONSE bằng tay từ `from`; trả số gói server trả lời RESPONSE: 1 (ACCEPT hay
+    // REJECT), hay 0 khi RESPONSE bị bỏ.
+    [[nodiscard]] usize respond(const Address& from, const ConnectToken& token,
+                                const u8 nonce_fill) {
+        HandshakeNonce nonce;
+        nonce.bytes.fill(std::byte{nonce_fill});
+        server_out.clear();
+        static_cast<void>(server.receive(
+            from, write_request({.protocol_version = kVersion, .nonce = nonce, .token = token}),
+            now, wall, server_out));
+        if (server_out.packets().size() != 1) {
+            ADD_FAILURE() << "REQUEST không được trả CHALLENGE";
+            return 0;
+        }
+        const Cookie cookie =
+            read_challenge(server_out.packets()[0].view()).value_or(Challenge{}).cookie;
+        server_out.clear();
+        static_cast<void>(server.receive(
+            from,
+            write_response(
+                {.protocol_version = kVersion, .nonce = nonce, .cookie = cookie, .token = token}),
+            now, wall, server_out));
+        const usize replies = server_out.packets().size();
+        server_out.clear();
+        return replies;
     }
 
     [[nodiscard]] ConnectToken token_for(const crypto::KeyExchangeKeyPair& key,
@@ -223,7 +259,7 @@ public:
     WallTime wall = WallTime::from_unix_microseconds(kIssuedAt + 1'000'000);
     Outbox client_out{64};
     Outbox server_out{64};
-    ServerTransport server = make_server();
+    ServerTransport server = make_server(base_config());
     ServerLog events;
     std::vector<std::vector<std::byte>> client_payloads;
 };
@@ -627,6 +663,82 @@ TEST_F(TransportTest, ClientIgnoresForeignPackets) {
     EXPECT_EQ(client.state(), ClientState::Connected);
 }
 
+// RESPONSE có cookie đúng tốn một lượt của địa chỉ nguồn (IPv4 theo cả địa chỉ, không theo cổng).
+// Hết lượt thì server không trả lời gì, kể cả REJECT; địa chỉ khác vẫn được; lượt hồi theo thời
+// gian.
+TEST_F(TransportTest, ResponsesAreLimitedPerSourceAddress) {
+    ServerConfig config = base_config();
+    config.response_limit_per_address = RateLimit::per_second(1, 2);
+    server = make_server(std::move(config));
+    const Address first = Address::v4({192, 0, 2, 10}, 50'001);
+    const Address second = Address::v4({192, 0, 2, 10}, 50'002);
+    const Address other = Address::v4({198, 51, 100, 7}, 50'000);
+    EXPECT_EQ(respond(first, token_for(exchange_key(0x61)), 1), 1U);
+    EXPECT_EQ(respond(second, token_for(exchange_key(0x62)), 2), 1U);
+    EXPECT_EQ(respond(first, token_for(exchange_key(0x63)), 3), 0U);
+    EXPECT_EQ(server.connection_count(), 2U);
+    EXPECT_EQ(respond(other, token_for(exchange_key(0x63)), 4), 1U);
+    advance(Duration::seconds(1));
+    EXPECT_EQ(respond(second, token_for(exchange_key(0x64)), 5), 1U);
+    EXPECT_EQ(server.connection_count(), 4U);
+}
+
+// Giới hạn chung của RESPONSE: đủ nhiều địa chỉ khác nhau cũng không vượt được.
+TEST_F(TransportTest, ResponsesAreLimitedForTheWholeServer) {
+    ServerConfig config = base_config();
+    config.response_limit = RateLimit::per_second(1, 2);
+    server = make_server(std::move(config));
+    EXPECT_EQ(respond(Address::v4({192, 0, 2, 1}, 1), token_for(exchange_key(0x61)), 1), 1U);
+    EXPECT_EQ(respond(Address::v4({192, 0, 2, 2}, 1), token_for(exchange_key(0x62)), 2), 1U);
+    EXPECT_EQ(respond(Address::v4({192, 0, 2, 3}, 1), token_for(exchange_key(0x63)), 3), 0U);
+    advance(Duration::seconds(1));
+    EXPECT_EQ(respond(Address::v4({192, 0, 2, 3}, 1), token_for(exchange_key(0x63)), 4), 1U);
+}
+
+// REQUEST, kể cả REQUEST lệch version (vốn được trả REJECT), tốn lượt chung của cả server.
+TEST_F(TransportTest, RequestsAreLimitedForTheWholeServer) {
+    ServerConfig config = base_config();
+    config.request_limit = RateLimit::per_second(1, 2);
+    server = make_server(std::move(config));
+    const ConnectToken token = token_for(client_key);
+    const auto request = [&](const u32 version) {
+        server_out.clear();
+        static_cast<void>(server.receive(
+            kClientAddress,
+            write_request({.protocol_version = version, .nonce = {}, .token = token}), now, wall,
+            server_out));
+        return server_out.packets().size();
+    };
+    EXPECT_EQ(request(kVersion), 1U);
+    EXPECT_EQ(request(kVersion + 1), 1U);  // REJECT lý do 1.
+    EXPECT_EQ(request(kVersion), 0U);
+    EXPECT_EQ(request(kVersion + 1), 0U);
+    advance(Duration::seconds(1));
+    EXPECT_EQ(request(kVersion), 1U);
+    server_out.clear();
+}
+
+// Gói dữ liệu đã xác thực tốn lượt của kết nối; gói vượt bị bỏ mà kết nối vẫn còn.
+TEST_F(TransportTest, AuthenticatedPacketsAreLimitedPerConnection) {
+    ServerConfig config = base_config();
+    config.packet_limit_per_connection = RateLimit::per_second(10, 3);
+    server = make_server(std::move(config));
+    ClientTransport client = connected_client();  // Keep-alive xác nhận kết nối tốn một lượt.
+    for (u32 i = 0; i < 5; ++i) {
+        ASSERT_TRUE(client.send(bytes_of("x"), now, client_out).has_value());
+    }
+    pump(client);
+    EXPECT_EQ(events.payloads.size(), 2U);
+    advance(Duration::milliseconds(100));
+    for (u32 i = 0; i < 2; ++i) {
+        ASSERT_TRUE(client.send(bytes_of("y"), now, client_out).has_value());
+    }
+    pump(client);
+    ASSERT_EQ(events.payloads.size(), 3U);
+    EXPECT_EQ(text_of(events.payloads[2]), "y");
+    EXPECT_EQ(server.connection_count(), 1U);
+}
+
 TEST(ServerTransportConfig, CreateRejectsAnEmptyConfiguration) {
     const crypto::SigningKeyPair identity = signing_key(0x33);
     const MonoTime now = MonoTime::from_nanoseconds(0);
@@ -642,6 +754,36 @@ TEST(ServerTransportConfig, CreateRejectsAnEmptyConfiguration) {
                                           .max_connections = 1},
                                          now)
                      .has_value());
+}
+
+TEST(ServerTransportConfig, CreateRejectsInvalidRateLimits) {
+    const crypto::SigningKeyPair identity = signing_key(0x33);
+    const MonoTime now = MonoTime::from_nanoseconds(0);
+    const ServerConfig valid{.identity = identity,
+                             .token_signers = {identity.public_key},
+                             .protocol_version = kVersion,
+                             .max_connections = 1};
+    EXPECT_TRUE(ServerTransport::create(valid, now).has_value());
+    const RateLimit broken = RateLimit::per_second(10, 0);
+    ServerConfig config = valid;
+    config.request_limit = broken;
+    EXPECT_FALSE(ServerTransport::create(config, now).has_value());
+    config = valid;
+    config.response_limit_per_address = broken;
+    EXPECT_FALSE(ServerTransport::create(config, now).has_value());
+    config = valid;
+    config.response_limit = broken;
+    EXPECT_FALSE(ServerTransport::create(config, now).has_value());
+    config = valid;
+    config.packet_limit_per_connection = broken;
+    EXPECT_FALSE(ServerTransport::create(config, now).has_value());
+    config = valid;
+    config.address_slots = 0;
+    EXPECT_FALSE(ServerTransport::create(config, now).has_value());
+    config.address_slots = kMaxAddressLimiterSlots + 1;
+    EXPECT_FALSE(ServerTransport::create(config, now).has_value());
+    config.address_slots = kMaxAddressLimiterSlots;
+    EXPECT_TRUE(ServerTransport::create(config, now).has_value());
 }
 
 TEST_F(TransportTest, ManualHandshakeGetsAWorkingChannel) {
@@ -783,7 +925,7 @@ TEST_F(TransportTest, TransportsCanBeMoved) {
     ClientTransport other = connect(token_for(key), key);
     moved = std::move(other);
     EXPECT_EQ(moved.state(), ClientState::Connecting);
-    ServerTransport replacement = make_server();
+    ServerTransport replacement = make_server(base_config());
     replacement = std::move(server);
     EXPECT_EQ(replacement.connection_count(), 1U);
 }

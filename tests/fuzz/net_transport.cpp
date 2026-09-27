@@ -6,6 +6,9 @@
 // Bất biến: mỗi gói server ghi vào outbox trong một lần receive không lớn hơn gói nó vừa nhận
 // (chống khuếch đại); số kết nối không vượt sức chứa; payload tầng trên không vượt
 // kMaxTransportPayload. ASan và UBSan của preset fuzz bắt phần còn lại.
+//
+// Giới hạn tần suất của server nhỏ hơn mặc định, để kịch bản ngắn cũng chạm tới chúng, và khoá hash
+// của bảng giới hạn theo địa chỉ cố định, để input nào cũng chạy lại ra đúng kết quả (X.4).
 
 #include "engine/core/assert.hpp"
 #include "engine/core/error.hpp"
@@ -13,12 +16,14 @@
 #include "engine/core/types.hpp"
 #include "engine/crypto/crypto.hpp"
 #include "engine/crypto/key_exchange.hpp"
+#include "engine/crypto/short_hash.hpp"
 #include "engine/crypto/sign.hpp"
 #include "engine/net/address.hpp"
 #include "engine/net/client_transport.hpp"
 #include "engine/net/connect_token.hpp"
 #include "engine/net/connection.hpp"
 #include "engine/net/outbox.hpp"
+#include "engine/net/rate_limit.hpp"
 #include "engine/net/server_transport.hpp"
 
 #include <algorithm>
@@ -105,12 +110,18 @@ private:
 };
 
 [[nodiscard]] net::ServerTransport make_server(const Keys& keys, const core::MonoTime now) {
+    net::ServerConfig config{.identity = keys.identity,
+                             .token_signers = {keys.auth.public_key},
+                             .protocol_version = kVersion,
+                             .max_connections = kMaxConnections};
+    config.request_limit = net::RateLimit::per_second(40, 6);
+    config.response_limit_per_address = net::RateLimit::per_second(10, 3);
+    config.response_limit = net::RateLimit::per_second(20, 4);
+    config.packet_limit_per_connection = net::RateLimit::per_second(40, 8);
+    config.address_slots = 16;
+    config.address_hash_key = crypto::ShortHashKey();
     orion::Result<net::ServerTransport> server =
-        net::ServerTransport::create({.identity = keys.identity,
-                                      .token_signers = {keys.auth.public_key},
-                                      .protocol_version = kVersion,
-                                      .max_connections = kMaxConnections},
-                                     now);
+        net::ServerTransport::create(std::move(config), now);
     ORION_VERIFY(server.has_value(), "không tạo được server của harness");
     return std::move(*server);
 }

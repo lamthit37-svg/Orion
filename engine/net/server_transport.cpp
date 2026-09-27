@@ -9,6 +9,7 @@
 #include "engine/crypto/crypto.hpp"
 #include "engine/crypto/hash.hpp"
 #include "engine/crypto/key_exchange.hpp"
+#include "engine/crypto/short_hash.hpp"
 #include "engine/crypto/sign.hpp"
 #include "engine/net/address.hpp"
 #include "engine/net/connect_token.hpp"
@@ -16,6 +17,7 @@
 #include "engine/net/handshake.hpp"
 #include "engine/net/outbox.hpp"
 #include "engine/net/packet.hpp"
+#include "engine/net/rate_limit.hpp"
 #include "engine/net/secure_channel.hpp"
 
 #include <array>
@@ -66,6 +68,8 @@ struct Connection {
     core::MonoTime created_at;
     core::MonoTime last_received;
     core::MonoTime last_sent;
+    // Gói dữ liệu đã xác thực của kết nối này (packet_limit_per_connection).
+    TokenBucket packets;
 };
 
 using ConnectionMap = core::SlotMap<Connection>;
@@ -108,6 +112,8 @@ struct TokenEntry {
 struct ServerTransport::State {
     State(ServerConfig server_config, const core::MonoTime now)
         : config(std::move(server_config)),
+          responses_by_address(config.response_limit_per_address, config.address_slots,
+                               config.address_hash_key.value_or(crypto::generate_short_hash_key())),
           cookies(now),
           connections(config.max_connections),
           ids(id_table_size(config.max_connections)),
@@ -175,6 +181,9 @@ struct ServerTransport::State {
                                                      core::MonoTime now, Outbox& outbox) noexcept;
 
     ServerConfig config;
+    TokenBucket requests;
+    TokenBucket responses;
+    AddressRateLimiter responses_by_address;
     CookieJar cookies;
     ConnectionMap connections;
     // Bảng id ánh xạ thẳng: connection id được chọn sao cho ô id & id_mask còn trống.
@@ -190,7 +199,7 @@ struct ServerTransport::State {
 void ServerTransport::State::on_request(const Address& from, const std::span<const std::byte> bytes,
                                         const core::MonoTime now, Outbox& outbox) noexcept {
     const Result<Request> request = read_request(bytes);
-    if (!request) {
+    if (!request || !requests.try_take(config.request_limit, now)) {
         return;
     }
     if (request->protocol_version != config.protocol_version) {
@@ -218,6 +227,12 @@ void ServerTransport::State::on_response(const Address& from,
     if (!cookies.check(response->cookie, response->protocol_version, response->nonce, hash, from,
                        now)) {
         return;  // Địa chỉ nguồn chưa được chứng minh: không trả lời gì.
+    }
+    // Cookie chứng minh địa chỉ nguồn, nên giới hạn theo địa chỉ không bị kẻ giả địa chỉ dùng để
+    // chặn người khác. Hết lượt của địa chỉ thì không tốn lượt chung.
+    if (!responses_by_address.try_take(from, now) ||
+        !responses.try_take(config.response_limit, now)) {
+        return;
     }
     const Result<VerifiedConnectToken> token = VerifiedConnectToken::verify(
         response->token.view(), config.token_signers, config.identity.public_key, wall_now);
@@ -290,7 +305,8 @@ ServerEvent ServerTransport::State::on_data(const Address& from,
     }
     const std::optional<u64> highest = connection->channel.highest_received();
     const Result<usize> opened = connection->channel.open(plaintext, bytes);
-    if (!opened) {
+    // Chỉ gói đã qua AEAD mới tốn lượt, nên kẻ không có khoá không làm hết lượt của kết nối.
+    if (!opened || !connection->packets.try_take(config.packet_limit_per_connection, now)) {
         return {};
     }
     // Gói đã được xác thực. Chỉ gói mới nhất mới chuyển được địa chỉ (client đổi mạng hay NAT đổi
@@ -328,6 +344,11 @@ ServerTransport::~ServerTransport() = default;
 Result<ServerTransport> ServerTransport::create(ServerConfig config, const core::MonoTime now) {
     if (config.max_connections == 0 || config.token_signers.empty()) {
         return fail(ErrorCode::InvalidArgument, "net: server cần sức chứa và khoá của auth");
+    }
+    if (!config.request_limit.valid() || !config.response_limit_per_address.valid() ||
+        !config.response_limit.valid() || !config.packet_limit_per_connection.valid() ||
+        config.address_slots == 0 || config.address_slots > kMaxAddressLimiterSlots) {
+        return fail(ErrorCode::InvalidArgument, "net: giới hạn tần suất của server sai");
     }
     return ServerTransport(std::make_unique<State>(std::move(config), now));
 }

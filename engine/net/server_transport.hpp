@@ -8,17 +8,22 @@
 // - Không gói nào tới tầng trên trước khi xác thực (X.9): gói bắt tay chỉ sinh gói trả lời nhỏ hơn
 //   nó (chống khuếch đại); gói dữ liệu chỉ tới tầng trên sau khi qua cửa sổ chống replay và AEAD.
 // - Đường gói dữ liệu (receive, send, update) không cấp phát (X.7). Mỗi kết nối mới thêm một nút
-//   vào bảng token đã dùng; bảng kết nối cấp phát một lần lúc create.
+//   vào bảng token đã dùng; bảng kết nối và bảng giới hạn theo địa chỉ cấp một lần lúc create.
+// - Mọi loại gói nhận có giới hạn tần suất (X.9; docs/formats/transport.md, mục Giới hạn tần suất):
+//   REQUEST cho cả server, RESPONSE có cookie đúng theo địa chỉ nguồn và cho cả server, gói dữ
+//   liệu đã xác thực theo kết nối. Gói vượt giới hạn bị bỏ, không trả lời gì.
 // - Không đồng bộ: thuộc luồng IO mạng của gateway (ARCH §7).
 
 #include "engine/core/error.hpp"
 #include "engine/core/time.hpp"
 #include "engine/core/types.hpp"
+#include "engine/crypto/short_hash.hpp"
 #include "engine/crypto/sign.hpp"
 #include "engine/net/address.hpp"
 #include "engine/net/connection.hpp"
 #include "engine/net/outbox.hpp"
 #include "engine/net/packet.hpp"
+#include "engine/net/rate_limit.hpp"
 
 #include <cstddef>
 #include <memory>
@@ -27,6 +32,15 @@
 #include <vector>
 
 namespace orion::net {
+
+// Giới hạn tần suất mặc định (docs/formats/transport.md, mục Giới hạn tần suất). Chính sách, không
+// phải số đo.
+inline constexpr RateLimit kRequestLimit = RateLimit::per_second(10'000, 20'000);
+inline constexpr RateLimit kResponseLimitPerAddress = RateLimit::per_second(20, 40);
+inline constexpr RateLimit kResponseLimit = RateLimit::per_second(2'000, 4'000);
+inline constexpr RateLimit kPacketLimitPerConnection = RateLimit::per_second(200, 400);
+inline constexpr usize kAddressLimiterSlots = 4'096;
+inline constexpr usize kMaxAddressLimiterSlots = usize{1} << 20U;
 
 struct ServerConfig {
     // Khoá định danh của cụm server: ký ACCEPT; token phải ghi đúng khoá công khai này.
@@ -37,6 +51,16 @@ struct ServerConfig {
     u32 protocol_version = 0;
     // Số kết nối tối đa, tính cả kết nối chờ; ít nhất 1.
     u32 max_connections = 0;
+    // Giới hạn tần suất; mỗi cái phải valid().
+    RateLimit request_limit = kRequestLimit;
+    RateLimit response_limit_per_address = kResponseLimitPerAddress;
+    RateLimit response_limit = kResponseLimit;
+    RateLimit packet_limit_per_connection = kPacketLimitPerConnection;
+    // Số ô của bảng giới hạn RESPONSE theo địa chỉ, 1 tới kMaxAddressLimiterSlots.
+    usize address_slots = kAddressLimiterSlots;
+    // Khoá SipHash của bảng đó; không đặt thì create sinh khoá ngẫu nhiên. Test và fuzz đặt khoá cố
+    // định để kết quả tất định (X.4).
+    std::optional<crypto::ShortHashKey> address_hash_key = std::nullopt;
 };
 
 // Điều một gói vừa nhận thay đổi ở tầng trên.
@@ -55,8 +79,9 @@ struct ServerEvent {
 
 class ServerTransport {
 public:
-    // Lỗi InvalidArgument khi max_connections là 0 hay danh sách khoá của auth rỗng.
-    // crypto::initialize phải thành công trước đó.
+    // Lỗi InvalidArgument khi max_connections là 0, danh sách khoá của auth rỗng, một giới hạn tần
+    // suất không valid() hay address_slots ngoài khoảng. crypto::initialize phải thành công trước
+    // đó.
     [[nodiscard]] static Result<ServerTransport> create(ServerConfig config, core::MonoTime now);
 
     // Xử lý một gói nhận từ `from`. Gói trả lời (CHALLENGE, ACCEPT, REJECT) được ghi vào `outbox`.

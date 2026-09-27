@@ -226,6 +226,33 @@ trong 1200 byte, trừ byte `kind`.
 
 Các con số ở mục này là chính sách, không phải số đo.
 
+## Giới hạn tần suất
+
+Mọi loại gói server nhận đều có giới hạn tần suất (CLAUDE.md X.9), kiểu token bucket: mỗi giới hạn
+có một tốc độ đều và số lượt dồn được khi đã lâu không dùng. Gói vượt giới hạn bị bỏ, không được
+trả lời gì.
+
+| Gói | Tính theo | Tốc độ | Dồn |
+|---|---|---|---|
+| `REQUEST` đọc được, kể cả lệch version | cả server | 10 000 mỗi giây | 20 000 |
+| `RESPONSE` có cookie đúng | địa chỉ nguồn | 20 mỗi giây | 40 |
+| `RESPONSE` có cookie đúng | cả server | 2 000 mỗi giây | 4 000 |
+| Gói dữ liệu đã qua AEAD | kết nối | 200 mỗi giây | 400 |
+
+- `REQUEST` không bị giới hạn theo địa chỉ: địa chỉ nguồn của nó chưa được chứng minh, và kẻ giả
+  địa chỉ của người khác sẽ dùng giới hạn đó để chặn họ. Giới hạn chung chặn trên CPU tốn cho cookie
+  và băng thông của `CHALLENGE`, vốn đã nhỏ hơn gói gây ra nó.
+- `RESPONSE` chỉ bị tính sau khi cookie qua, tức địa chỉ nguồn đã được chứng minh, và trước bước đắt
+  nhất của bắt tay là kiểm chữ ký Ed25519 của token. Địa chỉ nguồn là cả địa chỉ IPv4, hay /64 đầu
+  của IPv6 (một khách hàng thường có cả một /64), không tính cổng. Server băm nó bằng SipHash với
+  khoá bí mật vào một bảng 4096 ô; các nguồn trùng ô dùng chung hạn mức. Hết lượt của địa chỉ thì
+  không tốn lượt chung. Client gửi lại `RESPONSE` mỗi 250 ms, nên bị bỏ chỉ làm bắt tay chậm đi.
+- Gói dữ liệu chỉ bị tính sau khi qua cửa sổ chống replay và AEAD, nên kẻ không có khoá không làm
+  hết lượt của kết nối người khác. Gói vượt bị bỏ như gói hỏng: không tới tầng trên, không chuyển
+  địa chỉ, không làm mới hạn im lặng của kết nối.
+
+Các số ở mục này là chính sách, không phải số đo; server đặt lại được qua cấu hình.
+
 ## Cửa sổ chống replay
 
 Mỗi chiều nhận của một kết nối nhớ số thứ tự lớn nhất đã nhận và 1024 số ngay trước nó (cách của
