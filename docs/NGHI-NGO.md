@@ -299,7 +299,8 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   target `crypto_password_hash` có gọi bộ giải mã PHC của libsodium, nhưng ở dạng chưa instrument.
 - **Cách kiểm:** thêm triplet build dependency với `-fsanitize=address,undefined` cho preset
   `linux-fuzz` (như `x64-windows-orion-asan` cho MSVC), rồi chạy lại fuzz đêm.
-- **Trạng thái:** mở.
+- **Trạng thái:** mở. Cùng giới hạn đó áp cho zstd và cho TSan: preset `linux-tsan` không thấy
+  truy cập bên trong zstd; điều code dựa vào ở đó được đo riêng ở NGHI-NGO-033.
 
 ### NGHI-NGO-032 — Tệp của `engine/io` trên Apple
 
@@ -450,3 +451,24 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   `--header-filter='.*/(engine|game|tools|tests)/.*'` báo 20 phát hiện trong `quat.hpp`. Từ nay
   `run_tidy.py` đọc regex trong `.clang-tidy` và truyền lại qua `--header-filter`; lần chạy đầu
   tìm ra 13 phát hiện đã bị giấu trong header của `engine/core`, sửa ở commit `c9b75f2`.
+
+### NGHI-NGO-033 — Nhiều luồng dùng chung một `ZSTD_DDict`
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** `PakReader` dựng mỗi dictionary của pak thành một `ZSTD_DDict` khi mở, rồi mọi
+  luồng đọc, mỗi luồng một `ZSTD_DCtx`, dùng chung nó qua `ZSTD_decompress_usingDDict` mà không
+  khoá.
+- **Lý do nghi:** `zstd.h` của v1.5.7 nói rõ `ZSTD_CDict` dùng chung giữa các luồng được, còn với
+  `ZSTD_DDict` thì không nói gì. TSan của preset `linux-tsan` không thấy truy cập bên trong zstd vì
+  dependency không được instrument (NGHI-NGO-031), nên `PakTest.ConcurrentReadersWithSeparateContexts`
+  chỉ kiểm phần code của dự án.
+- **Cách kiểm:** biên dịch mã nguồn zstd ở tag `v1.5.7` (repo `facebook/zstd`, bản ghim ở ADR 0012)
+  cùng một harness với `-fsanitize=thread` và `-DZSTD_DISABLE_ASM`, để mọi đường giải nén là code C
+  có instrument. 8 luồng, mỗi luồng một `ZSTD_DCtx`, giải nén 48 frame × 60 vòng qua cùng một
+  `ZSTD_DDict`; làm với một dictionary chỉ có nội dung và một dictionary huấn luyện bằng
+  `ZDICT_trainFromBuffer` (có bảng entropy mà DCtx trỏ thẳng vào). Đối chứng: cùng harness nhưng
+  các luồng dùng chung một `ZSTD_DCtx`.
+- **Trạng thái:** đóng 2026-09-27 cho zstd v1.5.7; đo lại khi đổi phiên bản zstd.
+- **Bằng chứng:** mỗi loại dictionary 23 040 lần giải nén, 0 kết quả sai, 0 cảnh báo TSan. Đối
+  chứng: 103 cảnh báo `data race` trong `lib/decompress/zstd_decompress.c` (`ZSTD_decompressBegin`,
+  `ZSTD_decompressBegin_usingDDict`), nên TSan của harness thấy được truy cập bên trong zstd.

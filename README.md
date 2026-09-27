@@ -41,7 +41,7 @@ Mọi thứ sinh ra nằm trong `out/` và xoá lúc nào cũng được (ARCH �
 Repo đang được dựng theo ARCH. Mục này liệt kê đúng những gì đã build và test được; vùng CHẠY và
 CHƠI chưa có.
 
-- Tài liệu nền, ADR 0001–0011 (0009–0011 chờ xác nhận) và sổ nghi ngờ.
+- Tài liệu nền, ADR 0001–0012 (0009–0012 chờ xác nhận) và sổ nghi ngờ.
 - Cổng kiểm `check_style`, `check_layers`, `check_tracked`, kèm unittest.
 - Khung CMake: preset của ARCH §6, toolchain và triplet vcpkg riêng, `orion_add_module()`,
   `tests/toolchain/features.cpp` (số đo từng toolchain ở NGHI-NGO-009).
@@ -61,6 +61,9 @@ CHƠI chưa có.
   được kiểm trước khi tới libsodium; so sánh thời gian hằng và bí mật tự xoá. Test theo vector của
   RFC 8032, 7748, 8439 và chuỗi Argon2id của bản cài đặt tham chiếu.
 - `engine/io` (đang dựng): đường dẫn ảo chung cho tệp rời và pak, tệp đọc theo vị trí và ghi
-  nguyên tử (tệp tạm, đẩy xuống đĩa, đổi tên đè) trên Windows, Linux, Android và Apple.
-- Khung fuzz `tests/fuzz/` (target đầu tiên: chuỗi băm mật khẩu), `tools/run_fuzz.py` và job fuzz
-  đêm; ở mọi preset khác ctest chạy lại corpus.
+  nguyên tử (tệp tạm, đẩy xuống đĩa, đổi tên đè) trên Windows, Linux, Android và Apple. Pak phiên
+  bản 1 (`docs/formats/pak.md`, ADR 0012): hash của header và index so với manifest trước khi phân
+  tích, mỗi entry nén Zstd riêng (có dictionary) và được băm trước khi giải nén; đọc từ nhiều luồng,
+  không cấp phát sau khi dành bộ đệm. Bộ ghi pak và huấn luyện dictionary chỉ có ở DEV và tool.
+- Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak), `tools/run_fuzz.py` và job
+  fuzz đêm; ở mọi preset khác ctest chạy lại corpus.

@@ -169,6 +169,7 @@ EngineGAME/
 │   ├── run_fuzz.py — chạy fuzz target như job fuzz đêm của CI (X.4, X.16.9)
 │   ├── check_coverage.py — ngưỡng coverage dòng của CLAUDE.md X.4, đo bằng llvm-cov
 │   ├── gen_math_reference.py — bảng giá trị làm tròn đúng cho test độ chính xác của engine/math
+│   ├── gen_pak_seeds.py — pak hạt giống viết độc lập theo docs/formats/pak.md, kiểm chéo engine/io
 │   ├── tests/ — unittest của các cổng kiểm, chạy trong ctest
 │   ├── cooker/ — orion_cooker
 │   ├── editor/ — orion_editor: world editor trên Dear ImGui
