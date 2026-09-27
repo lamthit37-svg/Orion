@@ -73,5 +73,8 @@ CHƠI chưa có.
   preset bằng cách biên dịch với cấu hình ship. Đọc bất đồng bộ: luồng `orion-io` đọc qua VFS theo
   thứ tự gửi; luồng chính gửi và nhận không cấp phát, không chặn, và số yêu cầu chưa nhận có giới
   hạn.
-- Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest), `tools/run_fuzz.py`
-  và job fuzz đêm; ở mọi preset khác ctest chạy lại corpus.
+- `engine/net` (đang dựng): bitstream bit-packed, little-endian cho protocol
+  (`docs/formats/protocol.md`, ADR 0004) — số nguyên theo khoảng, số thực lượng tử hoá, byte và chuỗi
+  có giới hạn; bên đọc là hàm toàn phần và buộc mỗi tin nhắn có đúng một cách mã hoá.
+- Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest, bitstream),
+  `tools/run_fuzz.py` và job fuzz đêm; ở mọi preset khác ctest chạy lại corpus.
