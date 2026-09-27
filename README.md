@@ -41,7 +41,7 @@ Mọi thứ sinh ra nằm trong `out/` và xoá lúc nào cũng được (ARCH �
 Repo đang được dựng theo ARCH. Mục này liệt kê đúng những gì đã build và test được; vùng CHẠY và
 CHƠI chưa có.
 
-- Tài liệu nền, ADR 0001–0008 và sổ nghi ngờ.
+- Tài liệu nền, ADR 0001–0011 (0009–0011 chờ xác nhận) và sổ nghi ngờ.
 - Cổng kiểm `check_style`, `check_layers`, `check_tracked`, kèm unittest.
 - Khung CMake: preset của ARCH §6, toolchain và triplet vcpkg riêng, `orion_add_module()`,
   `tests/toolchain/features.cpp` (số đo từng toolchain ở NGHI-NGO-009).
@@ -56,3 +56,7 @@ CHƠI chưa có.
 - `engine/jobs`: luồng có tên (API gốc của từng nền tảng, ADR 0007), job system work-stealing với
   deque Chase–Lev, `parallel_for` chia khối cố định để gộp kết quả tất định, không khoá và không cấp
   phát sau khi dựng. Cầu nối JobSystem cho Jolt đến cùng `engine/physics`.
+- `engine/crypto` bọc libsodium (ADR 0011): BLAKE2b, chữ ký Ed25519, trao khoá X25519 ra hai khoá
+  phiên, AEAD ChaCha20-Poly1305 với nonce lấy từ số thứ tự, băm mật khẩu Argon2id với chuỗi PHC
+  được kiểm trước khi tới libsodium; so sánh thời gian hằng và bí mật tự xoá. Test theo vector của
+  RFC 8032, 7748, 8439 và chuỗi Argon2id của bản cài đặt tham chiếu.
