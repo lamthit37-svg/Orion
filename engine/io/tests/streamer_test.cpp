@@ -14,7 +14,6 @@
 #include <gtest/gtest.h>
 
 #include <array>
-#include <chrono>
 #include <cstddef>
 #include <span>
 #include <string>
@@ -47,18 +46,19 @@ constexpr u32 kFileCount = 16;
     return {bytes.begin(), bytes.end()};
 }
 
-// Gom kết quả tới khi đủ `count`, chờ tối đa khoảng 20 giây: mất một lần đánh thức thì test hỏng
-// thay vì treo.
+// Gom kết quả tới khi đủ `count` hay không còn yêu cầu nào chưa poll. Không ngủ (X.4): nhường CPU
+// cho luồng IO rồi poll lại. Nếu luồng IO lỡ một lần đánh thức, vòng này không dừng và ctest đánh
+// hỏng test khi hết TIMEOUT (cmake/orion_module.cmake).
 [[nodiscard]] std::vector<StreamResult> collect(Streamer& streamer, const usize count) {
     std::vector<StreamResult> results;
     std::array<StreamResult, 4> batch{};
-    for (u32 attempt = 0; attempt < 20'000 && results.size() < count; ++attempt) {
+    while (results.size() < count && streamer.pending() > 0) {
         const usize n = streamer.poll(batch);
         for (usize k = 0; k < n; ++k) {
             results.push_back(std::move(batch[k]));
         }
         if (n == 0) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::yield();
         }
     }
     return results;
@@ -147,7 +147,7 @@ TEST_F(StreamerTest, ManySleepWakeCycles) {
     u32 received = 0;
     u32 wrong = 0;
     std::array<StreamResult, 2> batch{};
-    for (u32 attempt = 0; attempt < 200'000 && received < kRequests; ++attempt) {
+    while (received < kRequests) {
         while (submitted < kRequests &&
                streamer->submit(
                    {.ticket = submitted, .path = vpath(file_name(submitted % kFileCount))})) {
@@ -161,7 +161,7 @@ TEST_F(StreamerTest, ManySleepWakeCycles) {
             ++received;
         }
         if (n == 0) {
-            std::this_thread::sleep_for(std::chrono::microseconds(100));
+            std::this_thread::yield();
         }
     }
     EXPECT_EQ(received, kRequests);
@@ -217,11 +217,11 @@ TEST_F(StreamerTest, SubmitAndPollDoNotAllocateOnTheCallingThread) {
     for (usize i = 0; i < paths.size(); ++i) {
         ASSERT_TRUE(streamer->submit({.ticket = i, .path = paths[i]}));
     }
-    for (u32 attempt = 0; attempt < 20'000 && received < paths.size(); ++attempt) {
+    while (received < paths.size()) {
         const usize n = streamer->poll(std::span(batch).subspan(received));
         received += n;
         if (n == 0) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            std::this_thread::yield();
         }
     }
     EXPECT_EQ(scope.count(), 0U);
