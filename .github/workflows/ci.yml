@@ -79,12 +79,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        preset: [dev, asan, ubsan]
+        include:
+          - preset: dev
+            triplet: x64-windows-orion
+          - preset: asan
+            triplet: x64-windows-orion-asan
+          - preset: ubsan
+            triplet: x64-windows-orion
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-orion
         with:
-          triplet: x64-windows-orion
+          triplet: ${{ matrix.triplet }}
       - name: Môi trường MSVC x64 (thay cho dev.bat của máy dev)
         shell: pwsh
         run: |

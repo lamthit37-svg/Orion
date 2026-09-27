@@ -226,7 +226,12 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
 - **Lý do nghi:** STL của MSVC ghi dấu annotation của container vào object file; trộn object có và
   không có ASan có thể bị linker từ chối.
 - **Cách kiểm:** job Windows của CI build preset `asan` khi đã có dependency đầu tiên.
-- **Trạng thái:** mở.
+- **Trạng thái:** mở. Đã đo được lỗi: CI run 36316870461 (MSVC 14.51.36231) báo `LNK2038: mismatch
+  detected for 'annotate_string' / 'annotate_vector' / 'annotate_optional'` giữa `gtest.lib` và
+  test của dự án. Cách sửa đang chờ CI xác nhận: preset `asan` dùng triplet
+  `x64-windows-orion-asan`, build dependency với `/D_ANNOTATE_STL`; theo
+  `stl/inc/__msvc_sanitizer_annotate_container.hpp` của microsoft/STL (commit `f023531`), macro này
+  chèn code annotation mà không ghi `detect_mismatch` nào.
 
 ### NGHI-NGO-026 — Test xanh với đúng bản dependency ghim trong vcpkg
 

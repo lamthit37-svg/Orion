@@ -59,7 +59,8 @@
       "inherits": "windows-base",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "ORION_SANITIZE": "address"
+        "ORION_SANITIZE": "address",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-orion-asan"
       }
     },
     {
