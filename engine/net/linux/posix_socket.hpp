@@ -131,11 +131,6 @@ template <class Call>
     return static_cast<sockaddr*>(raw);
 }
 
-[[nodiscard]] inline const sockaddr* as_sockaddr(const sockaddr_storage& storage) noexcept {
-    const void* const raw = &storage;
-    return static_cast<const sockaddr*>(raw);
-}
-
 // Bật IPV6_V6ONLY cho socket IPv6 rồi bind; đóng socket khi lỗi.
 [[nodiscard]] inline Result<std::intptr_t> configure_and_bind(const int fd,
                                                               const Address& local) noexcept {

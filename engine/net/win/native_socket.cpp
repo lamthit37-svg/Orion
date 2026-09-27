@@ -115,11 +115,6 @@ namespace {
     return static_cast<sockaddr*>(raw);
 }
 
-[[nodiscard]] const sockaddr* as_sockaddr(const SOCKADDR_STORAGE& storage) noexcept {
-    const void* const raw = &storage;
-    return static_cast<const sockaddr*>(raw);
-}
-
 // Lỗi của một bước cấu hình: đóng socket rồi trả lỗi.
 [[nodiscard]] std::unexpected<Error> close_with(const SOCKET udp,
                                                 const ErrorContext context) noexcept {
