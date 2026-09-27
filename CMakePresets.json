@@ -1,0 +1,231 @@
+{
+  "version": 10,
+  "cmakeMinimumRequired": {
+    "major": 4,
+    "minor": 4,
+    "patch": 0
+  },
+  "$comment": [
+    "Preset và workflow của ARCH §6. Mọi thứ sinh ra nằm trong out/ (ARCH §1).",
+    "vcpkg lấy từ biến môi trường VCPKG_ROOT; triplet riêng nằm ở cmake/triplets/."
+  ],
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "windows-base",
+      "hidden": true,
+      "inherits": "base",
+      "$comment": "Toolchain 1 (MSVC). Trên máy dev chạy bên trong cổng dev.bat (hiến pháp II).",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "toolset": {
+        "value": "host=x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-orion",
+        "VCPKG_HOST_TRIPLET": "x64-windows-orion"
+      }
+    },
+    {
+      "name": "dev",
+      "displayName": "dev — MSVC, Debug",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "asan",
+      "displayName": "asan — MSVC, Debug, /fsanitize=address",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ORION_SANITIZE": "address"
+      }
+    },
+    {
+      "name": "ubsan",
+      "displayName": "ubsan — clang-cl, -fsanitize=undefined",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ORION_SANITIZE": "undefined"
+      }
+    },
+    {
+      "name": "profile",
+      "displayName": "profile — MSVC, RelWithDebInfo, Tracy",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "ORION_PROFILE": "ON"
+      }
+    },
+    {
+      "name": "ship",
+      "displayName": "ship — MSVC, Release, LTCG, không công cụ dev",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ORION_SHIP": "ON"
+      }
+    },
+    {
+      "name": "linux-base",
+      "hidden": true,
+      "inherits": "base",
+      "$comment": "Toolchain 3 (clang, libstdc++), trong WSL2 hoặc CI.",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/linux-clang.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-linux-orion",
+        "VCPKG_HOST_TRIPLET": "x64-linux-orion"
+      }
+    },
+    {
+      "name": "linux",
+      "displayName": "linux — clang, RelWithDebInfo: server, shared, tool",
+      "inherits": "linux-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "linux-tsan",
+      "displayName": "linux-tsan — clang, -fsanitize=thread",
+      "inherits": "linux-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "ORION_SANITIZE": "thread"
+      }
+    },
+    {
+      "name": "linux-fuzz",
+      "displayName": "linux-fuzz — clang, libFuzzer, ASan, UBSan",
+      "inherits": "linux-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "ORION_FUZZ": "ON"
+      }
+    },
+    {
+      "name": "linux-coverage",
+      "displayName": "linux-coverage — clang, Debug, llvm-cov",
+      "inherits": "linux-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ORION_COVERAGE": "ON"
+      }
+    },
+    {
+      "name": "android-arm64",
+      "displayName": "android-arm64 — clang NDK, arm64-v8a",
+      "inherits": "base",
+      "$comment": "Toolchain 4. Gradle trong game/client/android/ gọi preset này.",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/android.cmake",
+        "VCPKG_TARGET_TRIPLET": "arm64-android-orion"
+      }
+    },
+    {
+      "name": "ios-arm64",
+      "displayName": "ios-arm64 — Apple clang, Xcode, chỉ trên Mac",
+      "inherits": "base",
+      "generator": "Xcode",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      },
+      "cacheVariables": {
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/ios.cmake",
+        "VCPKG_TARGET_TRIPLET": "arm64-ios-orion"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "dev", "configurePreset": "dev" },
+    { "name": "asan", "configurePreset": "asan" },
+    { "name": "ubsan", "configurePreset": "ubsan" },
+    { "name": "profile", "configurePreset": "profile" },
+    { "name": "ship", "configurePreset": "ship" },
+    { "name": "linux", "configurePreset": "linux" },
+    { "name": "linux-tsan", "configurePreset": "linux-tsan" },
+    { "name": "linux-fuzz", "configurePreset": "linux-fuzz" },
+    { "name": "linux-coverage", "configurePreset": "linux-coverage" },
+    { "name": "android-arm64", "configurePreset": "android-arm64" },
+    { "name": "ios-arm64", "configurePreset": "ios-arm64", "configuration": "Debug" }
+  ],
+  "testPresets": [
+    {
+      "name": "test-base",
+      "hidden": true,
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    { "name": "dev", "inherits": "test-base", "configurePreset": "dev" },
+    { "name": "asan", "inherits": "test-base", "configurePreset": "asan" },
+    { "name": "ubsan", "inherits": "test-base", "configurePreset": "ubsan" },
+    { "name": "profile", "inherits": "test-base", "configurePreset": "profile" },
+    { "name": "linux", "inherits": "test-base", "configurePreset": "linux" },
+    { "name": "linux-tsan", "inherits": "test-base", "configurePreset": "linux-tsan" },
+    { "name": "linux-fuzz", "inherits": "test-base", "configurePreset": "linux-fuzz" },
+    { "name": "linux-coverage", "inherits": "test-base", "configurePreset": "linux-coverage" }
+  ],
+  "workflowPresets": [
+    {
+      "name": "dev",
+      "steps": [
+        { "type": "configure", "name": "dev" },
+        { "type": "build", "name": "dev" },
+        { "type": "test", "name": "dev" }
+      ]
+    },
+    {
+      "name": "linux",
+      "steps": [
+        { "type": "configure", "name": "linux" },
+        { "type": "build", "name": "linux" },
+        { "type": "test", "name": "linux" }
+      ]
+    },
+    {
+      "name": "linux-tsan",
+      "steps": [
+        { "type": "configure", "name": "linux-tsan" },
+        { "type": "build", "name": "linux-tsan" },
+        { "type": "test", "name": "linux-tsan" }
+      ]
+    }
+  ]
+}

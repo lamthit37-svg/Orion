@@ -197,6 +197,39 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
 - **Cách kiểm:** số liệu phân bố phiên bản iOS của thị trường mục tiêu tại thời điểm chốt.
 - **Trạng thái:** mở.
 
+### NGHI-NGO-023 — UBSan của clang-cl có runtime chạy được
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** Preset `ubsan` (clang-cl) link được runtime UBSan và in chẩn đoán có vị trí
+  nguồn, thay vì chỉ bẫy.
+- **Lý do nghi:** CMake gọi thẳng linker của MSVC với clang-cl, nên runtime của sanitizer không tự
+  được thêm như với driver GNU. Tạm thời `orion_flags.cmake` dùng `-fsanitize-trap=undefined`: vẫn
+  bắt mọi UB mà UBSan kiểm, nhưng chỉ dừng bằng lệnh bẫy, không in chẩn đoán.
+- **Cách kiểm:** job Windows của CI build preset `ubsan` với runtime
+  (`clang_rt.ubsan_standalone-x86_64.lib`) và chạy một test cố ý tràn số có dấu.
+- **Trạng thái:** mở.
+
+### NGHI-NGO-024 — MSVC STL với `_HAS_EXCEPTIONS=0` sạch dưới `/W4 /WX`
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** Với `/EHs-c- /GR- _HAS_EXCEPTIONS=0`, các header chuẩn dự án dùng biên dịch
+  không warning dưới `/W4 /WX /permissive-`.
+- **Lý do nghi:** Tắt exception trên MSVC không phải cấu hình mặc định; STL có thể phát C4530 hoặc
+  warning khác khi `_HAS_EXCEPTIONS` không khớp.
+- **Cách kiểm:** job Windows của CI build preset `dev` và `asan`.
+- **Trạng thái:** mở.
+
+### NGHI-NGO-025 — ASan của MSVC với thư viện tĩnh vcpkg không bật ASan
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** Preset `asan` link được code dự án build với `/fsanitize=address` cùng thư viện
+  tĩnh của triplet `x64-windows-orion` (không bật ASan), không lỗi `detect_mismatch` về annotation
+  của `std::vector` và `std::string`.
+- **Lý do nghi:** STL của MSVC ghi dấu annotation của container vào object file; trộn object có và
+  không có ASan có thể bị linker từ chối.
+- **Cách kiểm:** job Windows của CI build preset `asan` khi đã có dependency đầu tiên.
+- **Trạng thái:** mở.
+
 ---
 
 ## Đã đóng
@@ -282,3 +315,5 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   `__cpp_designated_initializers` 201707, `__cpp_consteval` 202211, `__cpp_constinit` 201907.
   Không có: `__cpp_lib_flat_map`, `__cpp_lib_mdspan`, `__cpp_lib_constexpr_cmath`,
   `__cpp_lib_start_lifetime_as`, `__cpp_lib_containers_ranges`, `__cpp_lib_format_ranges`.
+  `__cpp_nontype_template_args` chỉ là 201411 (chưa đủ tham số template kiểu lớp theo macro), đo
+  khi build `toolchain_features` lần đầu; dự án không dùng tính năng này.

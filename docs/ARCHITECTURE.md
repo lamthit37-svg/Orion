@@ -386,13 +386,26 @@ Mỗi mục là một file `docs/adr/NNNN-ten.md`. Đây là những thứ mà l
 | `ship` | MSVC, Release, LTCG; loại Tracy và công cụ dev | bản CHƠI trên Windows |
 | `linux` | clang, trong WSL2 hoặc CI | server, shared, tool, fuzz |
 | `linux-tsan` | clang, `-fsanitize=thread` | race ở server, jobs, net |
+| `linux-fuzz` | clang, libFuzzer, ASan, UBSan cho mọi code | chạy fuzz (CLAUDE.md X.4, X.16.9) |
+| `linux-coverage` | clang, Debug, `-fprofile-instr-generate` | coverage bằng llvm-cov trong CI |
 | `android-arm64` | clang của NDK, gọi từ Gradle | client Android |
 | `ios-arm64` | Apple clang, generator Xcode, chỉ trên Mac | client iOS |
 
 Workflow preset:
 
 - `dev` — configure, build, test với preset `dev`.
-- `ship-win64` — configure `ship`, rồi build target `cook_win64` và `stage_play`.
+- `linux`, `linux-tsan` — như `dev`, cho preset cùng tên; CI và WSL2 dùng.
+- `ship-win64` — configure `ship`, rồi build target `cook_win64` và `stage_play`. Được thêm vào
+  `CMakePresets.json` cùng commit với hai target đó.
+
+Ghi chú về toolchain, đã đo khi dựng (NGHI-NGO-015, NGHI-NGO-017):
+
+- `linux*` dùng `cmake/toolchains/linux-clang.cmake` cho cả code dự án lẫn port vcpkg, chọn clang
+  mới nhất có tên kèm phiên bản; `orion_flags.cmake` từ chối clang dưới 20.
+- Mọi toolchain đều build với `-ffp-contract=off` (MSVC: `/fp:precise`), kể cả dependency, qua
+  toolchain và triplet riêng trong `cmake/`.
+- clang-format và clang-tidy được ghim bản (20.1.8 và 20.1.0), cài qua `pip` để mọi máy dùng đúng
+  một bản.
 
 Tên target (hiến pháp IV.1):
 
