@@ -30,6 +30,7 @@ Cần có:
 | Coverage (X.4) | build và `ctest --preset linux-coverage`, rồi `tools/check_coverage.py out/build/linux-coverage` |
 | Cổng kiểm | `python3.13 tools/check_style.py`, `check_layers.py`, `check_tracked.py` |
 | Phiên bản protocol (X.10) | `python3.13 tools/check_protocol_version.py --base origin/main` |
+| Test cần PostgreSQL (ARCH §8) | đặt `ORION_TEST_POSTGRES` là chuỗi kết nối libpq trước khi chạy `ctest`; thiếu thì các test đó bỏ qua |
 | Sửa format tự động | `python3.13 tools/check_style.py --fix` |
 
 Trên Windows gọi script bằng `py` thay cho `python3.13` (hiến pháp VIII). Cổng kiểm cũng chạy tự
@@ -104,6 +105,10 @@ CHƠI chưa có.
   cỡ tối đa nằm ngay trong tin nhắn (không cấp phát), kiểu mạnh cho tick, tick rút gọn 16 bit khôi
   phục theo tick tham chiếu (ADR 0002) và id nhân bản (ADR 0006), bộ ghi và bộ đọc có lỗi "dính" để
   code sinh ra là một dãy lệnh thẳng.
+- `game/server/lib/db`: bọc libpq (ADR 0013). Câu SQL chỉ là literal, giá trị luôn đi qua tham số ở
+  định dạng nhị phân; mọi lời gọi có mốc hạn, chờ socket không quá hạn qua API bất đồng bộ của libpq
+  (X.14); lỗi của server theo SQLSTATE; transaction RAII bắt được COMMIT bị server đổi thành
+  ROLLBACK. Test chạy trên PostgreSQL thật; CI có service PostgreSQL 18.
 - `tools/codegen`: ngôn ngữ schema của protocol (`docs/formats/protocol.md`) và bộ sinh C++ (ADR
   0004). Codegen kiểm mọi luật của schema (tên, khoảng, lượng tử hoá, cỡ tối đa theo kênh, khai báo
   thừa) và báo `tệp:dòng:cột`; CMake sinh lại code vào `out/` khi schema hay codegen đổi
@@ -115,5 +120,5 @@ CHƠI chưa có.
   phải khớp tệp golden của repo trên mọi toolchain CI chạy test.
 - Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest, bitstream, địa chỉ,
   connect token, gói dữ liệu, gói bắt tay, hai máy trạng thái của transport, lớp kênh tin nhắn, code
-  đọc do codegen sinh ra, bộ đọc của protocol game),
+  đọc do codegen sinh ra, bộ đọc của protocol game, giá trị nhị phân đọc từ PostgreSQL),
   `tools/run_fuzz.py` và job fuzz đêm; ở mọi preset khác ctest chạy lại corpus.

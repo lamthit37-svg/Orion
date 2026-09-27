@@ -325,6 +325,23 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   và asan, clang-cl ở preset ubsan, clang 20 Linux x64 ở linux, linux-tsan, linux-coverage, clang 20
   Linux arm64 ở linux-arm64 — log job `§8.2 windows: dev` có đủ bốn test `tests/replay` qua.
 
+### NGHI-NGO-035 — server_db đúng với libpq 18.4 của vcpkg và PostgreSQL 18
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** Test của `game/server/lib/db` xanh khi link libpq 18.4 bản vcpkg (tĩnh, không
+  OpenSSL) và chạy trên PostgreSQL 18, kể cả xác thực SCRAM-SHA-256 bằng mật khẩu; và trên Windows
+  (MSVC, clang-cl) khi có PostgreSQL để test.
+- **Lý do nghi:** Container dựng không tải được nguồn port vcpkg (NGHI-NGO-026), nên mọi lần chạy
+  cục bộ dùng libpq 16.15 của Ubuntu (có OpenSSL) với PostgreSQL 16.15. Bản không OpenSSL tự băm
+  SCRAM và lấy số ngẫu nhiên từ hệ điều hành, đường code chưa chạy lần nào ở đây. Job Windows của CI
+  không có PostgreSQL, nên test cần DB ở đó tự bỏ qua.
+- **Cách kiểm:** job `§8.3 linux`, `linux-tsan`, `linux-arm64` và `coverage` của CI chạy
+  `server_db_tests` với service `postgres:18.6` qua mật khẩu (`ORION_REQUIRE_POSTGRES=1`, nên bỏ
+  qua là đỏ). Windows: trên máy dev, PostgreSQL trong WSL2 (ARCH §1), đặt `ORION_TEST_POSTGRES` rồi
+  `ctest --preset dev -R game/server/lib/db`.
+- **Trạng thái:** mở. Đã xanh cục bộ (libpq 16.15, PostgreSQL 16.15): 37 test, cả với một vai trò
+  không phải superuser đăng nhập bằng SCRAM.
+
 ## Đã đóng
 
 ### NGHI-NGO-005 — CMake phát `/external:I` cho include SYSTEM với MSVC

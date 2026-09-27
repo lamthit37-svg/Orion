@@ -6,6 +6,11 @@
   "dependencies": [
     "benchmark",
     "gtest",
+    {
+      "name": "libpq",
+      "default-features": false,
+      "platform": "linux | windows"
+    },
     "libsodium",
     "zstd"
   ]

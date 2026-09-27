@@ -139,6 +139,7 @@ EXTERNAL_OWNERS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("hb-", ("engine/ui",)),
     ("harfbuzz/", ("engine/ui",)),
     ("libpq-fe.h", ("game/server/lib/db",)),
+    ("postgres_ext.h", ("game/server/lib/db",)),
     ("libpq/", ("game/server/lib/db",)),
     ("boost/", ("game/server/lib/http",)),
     ("simdjson.h", ("game/server/lib/http",)),

@@ -53,14 +53,34 @@ jobs:
       fail-fast: false
       matrix:
         preset: [linux, linux-tsan]
+    # PostgreSQL thật cho test của server_db (ARCH §8 mục 3, NGHI-NGO-035). Mật khẩu không phải bí
+    # mật: DB chỉ sống trong job và chỉ nghe trên runner. Đăng nhập bằng mật khẩu để phiên đi qua
+    # xác thực SCRAM của libpq bản vcpkg, bản không có OpenSSL.
+    services:
+      postgres:
+        image: postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
+        env:
+          POSTGRES_USER: orion
+          POSTGRES_PASSWORD: orion-ci
+          POSTGRES_DB: orion_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U orion -d orion_test"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      ORION_TEST_POSTGRES: host=127.0.0.1 port=5432 user=orion password=orion-ci dbname=orion_test
+      ORION_REQUIRE_POSTGRES: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: clang 20, libstdc++ 14 (NGHI-NGO-015) và autotools cho port libsodium (ADR 0011)
+      - name: clang 20, libstdc++ 14 (NGHI-NGO-015), công cụ build port vcpkg (ADR 0011, 0013)
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev \
-            autoconf autoconf-archive automake libtool pkg-config
+            autoconf autoconf-archive automake libtool pkg-config bison flex
       - uses: ./.github/actions/setup-orion
         with:
           triplet: x64-linux-orion
@@ -72,17 +92,36 @@ jobs:
     # Tất định số thực (X.11) và thứ tự bộ nhớ của job system trên arm64 khi chưa có thiết bị
     # (NGHI-NGO-028, NGHI-NGO-030); ADR 0009 mục 6.
     runs-on: ubuntu-24.04-arm
+    # PostgreSQL thật cho test của server_db (ARCH §8 mục 3, NGHI-NGO-035). Mật khẩu không phải bí
+    # mật: DB chỉ sống trong job và chỉ nghe trên runner. Đăng nhập bằng mật khẩu để phiên đi qua
+    # xác thực SCRAM của libpq bản vcpkg, bản không có OpenSSL.
+    services:
+      postgres:
+        image: postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
+        env:
+          POSTGRES_USER: orion
+          POSTGRES_PASSWORD: orion-ci
+          POSTGRES_DB: orion_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U orion -d orion_test"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
     env:
       # vcpkg trên arm64 dùng cmake và ninja có sẵn trong PATH (bản pip của setup-orion).
       VCPKG_FORCE_SYSTEM_BINARIES: "1"
+      ORION_TEST_POSTGRES: host=127.0.0.1 port=5432 user=orion password=orion-ci dbname=orion_test
+      ORION_REQUIRE_POSTGRES: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: clang 20, libstdc++ 14 (NGHI-NGO-015) và autotools cho port libsodium (ADR 0011)
+      - name: clang 20, libstdc++ 14 (NGHI-NGO-015), công cụ build port vcpkg (ADR 0011, 0013)
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev \
-            autoconf autoconf-archive automake libtool pkg-config
+            autoconf autoconf-archive automake libtool pkg-config bison flex
       - uses: ./.github/actions/setup-orion
         with:
           triplet: arm64-linux-orion
@@ -96,14 +135,34 @@ jobs:
     name: "§8.3 coverage: llvm-cov"
     needs: gate
     runs-on: ubuntu-24.04
+    # PostgreSQL thật cho test của server_db (ARCH §8 mục 3, NGHI-NGO-035). Mật khẩu không phải bí
+    # mật: DB chỉ sống trong job và chỉ nghe trên runner. Đăng nhập bằng mật khẩu để phiên đi qua
+    # xác thực SCRAM của libpq bản vcpkg, bản không có OpenSSL.
+    services:
+      postgres:
+        image: postgres:18.6@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
+        env:
+          POSTGRES_USER: orion
+          POSTGRES_PASSWORD: orion-ci
+          POSTGRES_DB: orion_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U orion -d orion_test"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      ORION_TEST_POSTGRES: host=127.0.0.1 port=5432 user=orion password=orion-ci dbname=orion_test
+      ORION_REQUIRE_POSTGRES: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: clang 20, libstdc++ 14 (NGHI-NGO-015) và autotools cho port libsodium (ADR 0011)
+      - name: clang 20, libstdc++ 14 (NGHI-NGO-015), công cụ build port vcpkg (ADR 0011, 0013)
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev \
-            autoconf autoconf-archive automake libtool pkg-config
+            autoconf autoconf-archive automake libtool pkg-config bison flex
       - uses: ./.github/actions/setup-orion
         with:
           triplet: x64-linux-orion
@@ -119,12 +178,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: clang 20, libstdc++ 14 (NGHI-NGO-015) và autotools cho port libsodium (ADR 0011)
+      - name: clang 20, libstdc++ 14 (NGHI-NGO-015), công cụ build port vcpkg (ADR 0011, 0013)
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev \
-            autoconf autoconf-archive automake libtool pkg-config
+            autoconf autoconf-archive automake libtool pkg-config bison flex
       - uses: ./.github/actions/setup-orion
         with:
           triplet: x64-linux-orion

@@ -30,12 +30,12 @@ jobs:
       FUZZ_SECONDS: ${{ inputs.seconds || 600 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: clang 20, libstdc++ 14 (NGHI-NGO-015) và autotools cho port libsodium (ADR 0011)
+      - name: clang 20, libstdc++ 14 (NGHI-NGO-015), công cụ build port vcpkg (ADR 0011, 0013)
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev \
-            autoconf autoconf-archive automake libtool pkg-config
+            autoconf autoconf-archive automake libtool pkg-config bison flex
       - uses: ./.github/actions/setup-orion
         with:
           triplet: x64-linux-orion

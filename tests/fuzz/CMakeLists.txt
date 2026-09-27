@@ -13,3 +13,7 @@ orion_add_fuzz_target(net_handshake DEPS engine_net engine_crypto)
 orion_add_fuzz_target(net_transport DEPS engine_net engine_crypto)
 orion_add_fuzz_target(protocol_codegen DEPS game_shared_test_protocol)
 orion_add_fuzz_target(protocol_decode DEPS game_shared)
+# server_db chỉ build cho Linux và Windows (game/CMakeLists.txt).
+if(TARGET server_db)
+    orion_add_fuzz_target(db_value DEPS server_db)
+endif()

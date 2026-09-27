@@ -53,3 +53,4 @@ Mỗi phương án một dòng, kèm lý do loại.
 | 0010 | [Dependency: GoogleTest, Google Benchmark](0010-dep-googletest-benchmark.md) | Đề xuất |
 | 0011 | [Dependency: libsodium](0011-dep-libsodium.md) | Đề xuất |
 | 0012 | [Dependency: Zstandard (zstd)](0012-dep-zstd.md) | Đề xuất |
+| 0013 | [Dependency: libpq](0013-dep-libpq.md) | Đề xuất |
