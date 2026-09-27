@@ -110,6 +110,9 @@ CHƠI chưa có.
   (`orion_add_protocol`). Code sinh ra không cấp phát, bên đọc là hàm toàn phần, tìm message theo id
   bằng bảng xếp sẵn. Protocol thử `game/shared/tests/protocol/everything.schema` dùng mọi tính năng
   và được test khứ hồi, test lỗi, fuzz trên mọi toolchain.
+- Golden replay `tests/replay/` (X.4, X.11): ba kịch bản di chuyển (mặt phẳng, địa hình có bậc,
+  vách và hố, góc thế giới) với input đi qua protocol như ở server; hash trạng thái sau mỗi tick
+  phải khớp tệp golden của repo trên mọi toolchain CI chạy test.
 - Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest, bitstream, địa chỉ,
   connect token, gói dữ liệu, gói bắt tay, hai máy trạng thái của transport, lớp kênh tin nhắn, code
   đọc do codegen sinh ra, bộ đọc của protocol game),

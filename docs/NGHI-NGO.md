@@ -308,6 +308,20 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
 
 ---
 
+### NGHI-NGO-034 — Golden replay khớp trên NDK arm64 và Apple arm64
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** `replay_tests` (`tests/replay/`) xanh với đúng các tệp `tests/replay/golden/*.txt`
+  của repo trên Android arm64 (NDK, bionic) và Apple arm64 (Apple clang), như CLAUDE.md X.11 đòi.
+- **Lý do nghi:** Mô phỏng chỉ dùng + − × ÷, căn và `floor` của `engine/math` trên f64, không FMA,
+  nên kết quả là duy nhất theo IEEE 754; nhưng CI chỉ build Android, iOS chỉ chạy khi bật tay
+  (NGHI-NGO-008), nên hai nền tảng này chưa chạy test lần nào.
+- **Cách kiểm:** build preset `android-arm64`, đẩy `replay_tests` và `tests/replay/golden/` lên
+  thiết bị hay emulator arm64 bằng `adb push`, rồi chạy với `ORION_REPLAY_GOLDEN_DIR` trỏ tới thư
+  mục golden đã đẩy; trên Mac arm64 chạy `ctest -R tests/replay` ở preset của Apple clang.
+- **Trạng thái:** mở. Đã khớp: clang 20 trên Linux x64 ở preset local, local-asan, local-ubsan,
+  local-tsan và local-coverage (cùng tệp golden, dù mức tối ưu và instrument khác nhau).
+
 ## Đã đóng
 
 ### NGHI-NGO-005 — CMake phát `/external:I` cho include SYSTEM với MSVC
