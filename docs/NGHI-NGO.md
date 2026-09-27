@@ -244,7 +244,9 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   chế độ flush-to-zero, từ `fmod` của bionic hay libm của Apple, hoặc từ compiler hợp nhất FMA.
 - **Cách kiểm:** đẩy `engine_math_tests` và `engine/math/tests/data/` lên thiết bị hoặc emulator
   Android arm64 bằng `adb` rồi chạy; trên Mac arm64 chạy preset tương ứng của Apple clang.
-- **Trạng thái:** mở. x64 đã đo: clang 20 trên Linux (local, ASan, UBSan, TSan, coverage).
+- **Trạng thái:** mở. x64 đã đo, cả hai test xanh: clang 20 trên Linux (local, ASan, UBSan, TSan,
+  coverage); CI run 36322188292 (commit `fe1c511`) trên MSVC 14.51.36231 (preset `dev`, `asan`)
+  và clang-cl (preset `ubsan`), mỗi job 102/102 test.
 
 ### NGHI-NGO-029 — SIMD viết tay cho `engine/math`
 
