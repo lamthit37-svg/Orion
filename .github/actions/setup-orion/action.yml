@@ -1,0 +1,52 @@
+# Chuẩn bị môi trường dựng giống nhau cho mọi job: Python 3.13, CMake và Ninja đúng bản, clang-format
+# và clang-tidy ghim bản, vcpkg ở đúng baseline của vcpkg.json, cache nhị phân của vcpkg theo triplet.
+name: setup-orion
+description: Cài công cụ dựng và vcpkg ở baseline của dự án
+inputs:
+  triplet:
+    description: Triplet vcpkg của job, dùng làm khoá cache nhị phân
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: "3.13"
+
+    - name: Công cụ dựng ghim bản
+      shell: bash
+      run: |
+        python -m pip install --disable-pip-version-check \
+          cmake==4.4.3 ninja==1.13.2 clang-format==20.1.8 clang-tidy==20.1.0
+        cmake --version
+        ninja --version
+        clang-format --version
+
+    - name: Baseline vcpkg từ vcpkg.json
+      shell: bash
+      run: |
+        baseline=$(python -c "import json; print(json.load(open('vcpkg.json'))['builtin-baseline'])")
+        echo "VCPKG_COMMIT=$baseline" >> "$GITHUB_ENV"
+        echo "VCPKG_ROOT=$RUNNER_TEMP/vcpkg" >> "$GITHUB_ENV"
+        echo "VCPKG_DISABLE_METRICS=1" >> "$GITHUB_ENV"
+        echo "VCPKG_BINARY_SOURCES=clear;files,$RUNNER_TEMP/vcpkg-bincache,readwrite" >> "$GITHUB_ENV"
+        mkdir -p "$RUNNER_TEMP/vcpkg-bincache"
+
+    - name: Clone và bootstrap vcpkg
+      shell: bash
+      run: |
+        git clone --filter=blob:none https://github.com/microsoft/vcpkg.git "$VCPKG_ROOT"
+        git -C "$VCPKG_ROOT" checkout --quiet "$VCPKG_COMMIT"
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          "$VCPKG_ROOT/bootstrap-vcpkg.bat" -disableMetrics
+        else
+          "$VCPKG_ROOT/bootstrap-vcpkg.sh" -disableMetrics
+        fi
+
+    - name: Cache nhị phân vcpkg
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/vcpkg-bincache
+        key: vcpkg-${{ inputs.triplet }}-${{ env.VCPKG_COMMIT }}-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', 'cmake/triplets/**', 'cmake/toolchains/**') }}
+        restore-keys: |
+          vcpkg-${{ inputs.triplet }}-${{ env.VCPKG_COMMIT }}-

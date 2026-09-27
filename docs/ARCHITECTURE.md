@@ -98,6 +98,9 @@ EngineGAME/
 ├── .editorconfig
 ├── .gitattributes — Git LFS cho content/, quy ước xuống dòng
 ├── .gitignore — out/, vcpkg_installed/
+├── .github/ — CI của ARCH §8 trên GitHub Actions (ADR 0009)
+│   ├── workflows/ci.yml
+│   └── actions/setup-orion/ — bước chuẩn bị dùng chung của mọi job
 │
 ├── cmake/
 │   ├── orion_flags.cmake — orion_apply_flags(): cờ nền cho mọi toolchain
@@ -162,6 +165,7 @@ EngineGAME/
 │   ├── check_layers.py — luật include ở CLAUDE.md X.1
 │   ├── check_tracked.py — tệp nguồn bị .gitignore nuốt
 │   ├── gatelib.py — phần dùng chung của ba cổng trên
+│   ├── run_tidy.py — chạy clang-tidy bản ghim trên compile database (X.1)
 │   ├── tests/ — unittest của các cổng kiểm, chạy trong ctest
 │   ├── cooker/ — orion_cooker
 │   ├── editor/ — orion_editor: world editor trên Dear ImGui

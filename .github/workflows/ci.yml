@@ -1,0 +1,135 @@
+# CI tối thiểu của ARCH §8. Mỗi job ghi số mục của §8 mà nó thực hiện. Mục chưa có gì để chạy
+# (benchmark, fuzz đêm, ảnh vàng, ship đêm) được thêm cùng commit với code mà nó kiểm.
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      ios:
+        description: Chạy thêm job iOS trên runner macOS (ARCH §8 mục 8, NGHI-NGO-008)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: "§8.1 cổng kiểm"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - run: python -m pip install --disable-pip-version-check clang-format==20.1.8
+      - run: python tools/check_style.py
+      - run: python tools/check_layers.py
+      - run: python tools/check_tracked.py
+      - run: python -m unittest discover -s tools/tests -t tools
+
+  linux:
+    name: "§8.3 linux: ${{ matrix.preset }}"
+    needs: gate
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [linux, linux-tsan]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: clang 20 và libstdc++ 14 (NGHI-NGO-015)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev
+      - uses: ./.github/actions/setup-orion
+        with:
+          triplet: x64-linux-orion
+      - run: cmake --workflow --preset ${{ matrix.preset }}
+
+  tidy:
+    name: "§8.4 clang-tidy: linux"
+    needs: gate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: clang 20 và libstdc++ 14 (NGHI-NGO-015)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev
+      - uses: ./.github/actions/setup-orion
+        with:
+          triplet: x64-linux-orion
+      - run: cmake --preset linux
+      - run: cmake --build --preset linux
+      - run: python tools/run_tidy.py -p out/build/linux
+
+  windows:
+    name: "§8.2 windows: ${{ matrix.preset }}"
+    needs: gate
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [dev, asan, ubsan]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-orion
+        with:
+          triplet: x64-windows-orion
+      - name: Môi trường MSVC x64 (thay cho dev.bat của máy dev)
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" `
+            -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+            -property installationPath
+          cmd /c "`"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul && set" | ForEach-Object {
+            if ($_ -match '^([^=]+)=(.*)$') { "$($matches[1])=$($matches[2])" >> $env:GITHUB_ENV }
+          }
+      - name: Phiên bản toolchain
+        shell: pwsh
+        run: |
+          cl 2>&1 | Select-Object -First 1
+          if ("${{ matrix.preset }}" -eq "ubsan") { clang-cl --version }
+      - run: cmake --preset ${{ matrix.preset }}
+      - run: cmake --build --preset ${{ matrix.preset }}
+      - run: ctest --preset ${{ matrix.preset }}
+
+  android:
+    name: "§8.7 android-arm64"
+    needs: gate
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-orion
+        with:
+          triplet: arm64-android-orion
+      - name: NDK có sẵn trên runner
+        run: |
+          echo "ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
+          cat "$ANDROID_NDK_LATEST_HOME/source.properties"
+      - run: cmake --preset android-arm64
+      - run: cmake --build --preset android-arm64
+
+  ios:
+    name: "§8.8 ios-arm64"
+    needs: gate
+    if: github.event_name == 'workflow_dispatch' && inputs.ios
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-orion
+        with:
+          triplet: arm64-ios-orion
+      - name: Phiên bản Xcode
+        run: xcodebuild -version
+      - run: cmake --preset ios-arm64
+      - run: cmake --build --preset ios-arm64

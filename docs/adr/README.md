@@ -49,3 +49,4 @@ Mỗi phương án một dòng, kèm lý do loại.
 | 0006 | [Định danh](0006-dinh-danh.md) | Chấp nhận |
 | 0007 | [Mô hình luồng](0007-mo-hinh-luong.md) | Chấp nhận |
 | 0008 | [Một ngôn ngữ](0008-mot-ngon-ngu.md) | Chấp nhận |
+| 0009 | [CI trên GitHub Actions](0009-ci-github-actions.md) | Đề xuất |
