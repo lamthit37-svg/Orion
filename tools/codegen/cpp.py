@@ -97,7 +97,10 @@ class _Context:
                 decl = self.protocol.lookup(name)
                 if isinstance(decl, s.Enum):
                     return f" = {name}::{decl.values[0].name}"
-        return ""
+        # Kiểu class: `{}` để mọi trường có giá trị mặc định, nên khởi tạo theo tên trường
+        # (`MoveInput{.tick = ...}`) bỏ qua được trường nào cũng được mà clang không cảnh báo
+        # -Wmissing-designated-field-initializers.
+        return "{}"
 
     def write(self, type_: s.Type, value: str, depth: int) -> list[str]:
         """Các lệnh ghi một giá trị kiểu type_ vào `encoder`."""

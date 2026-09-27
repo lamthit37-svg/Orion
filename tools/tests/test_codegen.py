@@ -282,8 +282,8 @@ class GenerationTest(unittest.TestCase):
         self.assertIn("    f64 b = 0x1.4000000000000p+3;  // quantized[10, 20, 0.5]\n", header)
         self.assertIn("    f64 c = 0.0;  // quantized[-1, 1, 0.5]\n", header)
         self.assertIn("    Kind d = Kind::Bb;\n", header)
-        self.assertIn("    BoundedArray<u8, 3> e;  // array[3] of bits(4)\n", header)
-        self.assertIn("    BoundedString<8> f;\n", header)
+        self.assertIn("    BoundedArray<u8, 3> e{};  // array[3] of bits(4)\n", header)
+        self.assertIn("    BoundedString<8> f{};\n", header)
 
     def test_lookup_tables_are_sorted_whatever_the_declaration_order(self) -> None:
         text = (HEADER + "enum Kind : u8 { Bb = 7 Aa = 1 }\n"

@@ -1,0 +1,14 @@
+# Sự kiện kinh tế giữa các server qua Redis Streams (ARCH §4.6; CLAUDE.md X.9, X.10). Thay đổi đã
+# được ghi vào ledger trong một transaction trước khi sự kiện được phát. Một sự kiện có thể tới
+# nhiều lần, nên bên nhận chỉ áp mỗi grant_id một lần.
+
+# Store báo world trao vật phẩm đã mua cho một nhân vật.
+event ItemGranted = 1 {
+    stream economy
+    # Id bền của lần trao, cấp khi ghi ledger: khoá idempotency của bên nhận.
+    grant_id: int[1, 9223372036854775807]
+    character_id: int[1, 9223372036854775807]
+    # Id định nghĩa vật phẩm trong data/.
+    item_def: int[1, 4294967295]
+    count: int[1, 1000000]
+}

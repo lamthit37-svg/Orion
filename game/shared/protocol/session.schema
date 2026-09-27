@@ -1,0 +1,44 @@
+# Vào và rời thế giới. Client chọn một nhân vật trong danh sách của dịch vụ account; gateway kiểm
+# nhân vật thuộc tài khoản của kết nối rồi định tuyến vào zone (ARCH §2).
+
+message EnterWorld = 1 {
+    channel reliable_ordered
+    from client
+    rate 1/s burst 3
+    # Id bền của nhân vật: do persistence cấp, 0 không hợp lệ (ADR 0006). Id nằm trong cột BIGINT
+    # của PostgreSQL nên không vượt 2^63 − 1.
+    character_id: int[1, 9223372036854775807]
+}
+
+message LeaveWorld = 2 {
+    channel reliable_ordered
+    from client
+    rate 1/s burst 3
+}
+
+message WorldEntered = 3 {
+    channel reliable_ordered
+    from server
+    rate 2/s burst 4
+    # Tick hiện tại của zone, bản đầy đủ (ADR 0002 mục 2): mốc để client ước lượng tick của zone và
+    # khôi phục short_tick trong các tin nhắn sau.
+    tick: tick
+    # Thực thể của chính client trong EntityUpdates.
+    self_id: replicated_id
+}
+
+enum EnterWorldError : u8 {
+    # Không có nhân vật này, hay nó không thuộc tài khoản của kết nối.
+    CharacterNotFound = 1
+    # Nhân vật đang ở trong thế giới qua một kết nối khác.
+    CharacterInWorld = 2
+    # Zone của nhân vật chưa nhận người chơi; client thử lại sau.
+    ZoneUnavailable = 3
+}
+
+message EnterWorldFailed = 4 {
+    channel reliable_ordered
+    from server
+    rate 2/s burst 4
+    reason: EnterWorldError
+}

@@ -2,6 +2,14 @@
 # X.11). Nguồn nằm ở gốc và ở các thư mục con protocol/, movement/, combat/, defs/.
 orion_add_module(DEPS engine_core engine_math engine_net)
 
+# Protocol của game (ADR 0004): mọi tệp protocol/*.schema cùng làm thành một protocol, sinh thành
+# game/shared/protocol/protocol.hpp trong out/ lúc build.
+file(GLOB protocol_schemas CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/protocol/*.schema")
+orion_add_protocol(game_shared
+    NAMESPACE orion::protocol
+    HEADER game/shared/protocol/protocol.hpp
+    SCHEMAS ${protocol_schemas})
+
 # Protocol thử của codegen (tests/protocol/*.schema): dùng mọi tính năng của ngôn ngữ schema, để
 # code sinh ra được biên dịch và chạy trên cả năm toolchain. Chỉ link vào test và fuzz, không vào
 # sản phẩm.

@@ -93,10 +93,13 @@ CHƠI chưa có.
   nhận theo gói bằng bitfield 32 gói, gửi lại theo RTT, cắt tin nhắn tới 32 KiB thành mảnh 1 KiB;
   bộ nhớ tin nhắn tin cậy là ngân sách byte khai trước, bên gửi đặt tin nhắn vào bộ đệm nhận của
   bên kia nên bên nhận chép thẳng, không cấp phát.
-- `game/shared` (đang dựng): code hỗ trợ của protocol sinh ra — mảng, chuỗi và byte có cỡ tối đa
-  nằm ngay trong tin nhắn (không cấp phát), kiểu mạnh cho tick, tick rút gọn 16 bit khôi phục theo
-  tick tham chiếu (ADR 0002) và id nhân bản (ADR 0006), bộ ghi và bộ đọc có lỗi "dính" để code sinh
-  ra là một dãy lệnh thẳng.
+- `game/shared` (đang dựng): protocol v1 trong `protocol/*.schema` — vào và rời thế giới, input di
+  chuyển (client chỉ gửi ý định, X.9) và trạng thái thực thể lượng tử hoá 1 cm, chat, sự kiện kinh
+  tế qua Redis Streams có khoá idempotency; test giữ id, kênh, bên gửi và byte trên dây tính tay
+  theo `docs/formats/protocol.md`. Code hỗ trợ của protocol sinh ra: mảng, chuỗi và byte có cỡ tối
+  đa nằm ngay trong tin nhắn (không cấp phát), kiểu mạnh cho tick, tick rút gọn 16 bit khôi phục
+  theo tick tham chiếu (ADR 0002) và id nhân bản (ADR 0006), bộ ghi và bộ đọc có lỗi "dính" để code
+  sinh ra là một dãy lệnh thẳng.
 - `tools/codegen`: ngôn ngữ schema của protocol (`docs/formats/protocol.md`) và bộ sinh C++ (ADR
   0004). Codegen kiểm mọi luật của schema (tên, khoảng, lượng tử hoá, cỡ tối đa theo kênh, khai báo
   thừa) và báo `tệp:dòng:cột`; CMake sinh lại code vào `out/` khi schema hay codegen đổi
@@ -105,5 +108,5 @@ CHƠI chưa có.
   và được test khứ hồi, test lỗi, fuzz trên mọi toolchain.
 - Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest, bitstream, địa chỉ,
   connect token, gói dữ liệu, gói bắt tay, hai máy trạng thái của transport, lớp kênh tin nhắn, code
-  đọc do codegen sinh ra),
+  đọc do codegen sinh ra, bộ đọc của protocol game),
   `tools/run_fuzz.py` và job fuzz đêm; ở mọi preset khác ctest chạy lại corpus.

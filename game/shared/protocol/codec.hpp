@@ -217,6 +217,8 @@ public:
                 return;
             }
         }
+        // T = i8 là một số của schema, không phải ký tự.
+        // NOLINTNEXTLINE(bugprone-signed-char-misuse, cert-str34-c)
         const auto wide = static_cast<i64>(value);
         if (wide < min || wide > max) {
             reject();

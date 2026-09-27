@@ -190,9 +190,11 @@ Bên đọc kiểm như bảng Kiểm khi đọc, và thêm:
   (cỡ bộ đệm đủ cho `encode`);
 - mỗi enum một `enum class` cùng kiểu nền, mỗi struct, message, event một `struct` cùng tên, trường
   cùng tên và thứ tự. Message có `kId`, `kChannel`, `kSender`, `kRateLimit`, `kMaxEncodedSize`; event
-  có `kId`, `kStream`, `kMaxEncodedSize`. Trường mặc định nằm trong khoảng đã khai: `false`; 0 với
-  `bits`; 0, hay `min` khi 0 ngoài khoảng, với `int` và `quantized`; giá trị khai đầu tiên với enum;
-  rỗng với `bytes`, `string`, `array`. Nên tin nhắn tạo mặc định luôn mã hoá được;
+  có `kId`, `kStream`, `kMaxEncodedSize`. Mọi trường có giá trị mặc định, nằm trong khoảng đã khai:
+  `false`; 0 với `bits`, `tick`, `short_tick`, `replicated_id`; 0, hay `min` khi 0 ngoài khoảng,
+  với `int` và `quantized`; giá trị khai đầu tiên với enum; rỗng với `bytes`, `string`, `array`;
+  struct lồng nhau lấy mặc định của từng trường. Nên tin nhắn tạo mặc định luôn mã hoá được, và
+  khởi tạo theo tên trường (`MoveInput{.tick = t}`) bỏ qua được trường bất kỳ;
 - `encode(tin nhắn, out)` cho mỗi message và event: ghi vào `out`, trả số byte. Lỗi:
   `InvalidArgument` khi một trường ngoài khoảng đã khai (số ngoài `int`, enum không có trong schema,
   `bits(n)` cần hơn `n` bit), `ResourceExhausted` khi `out` nhỏ hơn cỡ cần;

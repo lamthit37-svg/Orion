@@ -1,0 +1,28 @@
+# Chat. Server kiểm, lọc và phát lại tin nhắn; client không tự hiện tin nhắn chưa qua server.
+
+enum ChatScope : u8 {
+    # Người ở gần: tầm nhìn của zone.
+    Say = 0
+    # Cả zone.
+    Zone = 1
+}
+
+message ChatSend = 20 {
+    channel reliable_ordered
+    from client
+    rate 2/s burst 5
+    scope: ChatScope
+    text: string[255]
+}
+
+message ChatReceived = 21 {
+    channel reliable_ordered
+    from server
+    rate 50/s burst 100
+    scope: ChatScope
+    # Thực thể đã nói nếu client đang thấy nó; 0 là không có (ADR 0006).
+    sender: replicated_id
+    # Tên nhân vật. Luật đặt tên của dịch vụ account phải nằm trong giới hạn này.
+    sender_name: string[48]
+    text: string[255]
+}

@@ -1,0 +1,4 @@
+# Phiên bản của protocol (ADR 0004 mục 4, 5; CLAUDE.md X.10). Mọi tệp *.schema trong thư mục này
+# cùng làm thành một protocol; bắt tay mang số này và server từ chối client lệch phiên bản. Đổi bất
+# kỳ tệp nào ở đây thì phải tăng số dưới đây: CI chặn thay đổi schema quên tăng.
+version 1

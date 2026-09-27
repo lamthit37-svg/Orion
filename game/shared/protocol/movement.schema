@@ -1,0 +1,60 @@
+# Di chuyển. Client chỉ gửi input, tức ý định; server là nguồn sự thật của vị trí và gửi trạng thái
+# (CLAUDE.md X.9). Toạ độ theo ADR 0001: mét, +Y hướng lên; yaw là góc quanh +Y tính bằng radian,
+# yaw 0 nhìn về +Z.
+
+# Vị trí trong thế giới, lượng tử hoá 1 cm (ADR 0001 mục 8): mặt bằng ±32 768 m quanh gốc, độ cao
+# ±2 048 m. 23 + 19 + 23 bit.
+struct WorldPosition {
+    x: quantized[-32768, 32768, 0.01]
+    y: quantized[-2048, 2048, 0.01]
+    z: quantized[-32768, 32768, 0.01]
+}
+
+# Input của một tick.
+struct MoveFrame {
+    # Hướng muốn đi trong mặt phẳng ngang, theo trục thế giới, mỗi thành phần tính bằng phần trăm
+    # tốc độ tối đa. Server kẹp độ dài vector về 100.
+    move_x: int[-100, 100]
+    move_z: int[-100, 100]
+    # Hướng nhìn, bước 0,001 rad.
+    yaw: quantized[0, 6.2832, 0.001]
+    jump: bool
+}
+
+message MoveInput = 10 {
+    channel sequenced
+    from client
+    rate 60/s burst 120
+    # Tick của zone mà client ước lượng cho khung cuối (ADR 0002 mục 6); khung đứng trước nó một
+    # tick, và cứ thế. Client gửi lại vài khung gần nhất trong mỗi tin nhắn, nên mất một gói không
+    # làm mất input; server bỏ khung đã nhận.
+    tick: short_tick
+    frames: array[8] of MoveFrame
+}
+
+struct EntityState {
+    id: replicated_id
+    position: WorldPosition
+    yaw: quantized[0, 6.2832, 0.001]
+}
+
+# Trạng thái các thực thể client đang thấy, ở một tick của zone. Tần suất gửi từng thực thể do zone
+# quyết theo ưu tiên và ngân sách băng thông (ADR 0002 mục 4): mỗi thực thể 110 bit, nên 100 thực
+# thể gửi 20 lần mỗi giây là khoảng 27 KB/s (NGHI-NGO-011: ngân sách p95 32 KB/s của X.8 chưa đo).
+message EntityUpdates = 11 {
+    channel unreliable
+    from server
+    rate 100/s burst 200
+    tick: short_tick
+    entities: array[64] of EntityState
+}
+
+# Thực thể ra khỏi tầm nhìn hay không còn, từ tick này. Bản EntityUpdates cũ hơn tới muộn trên kênh
+# unreliable không làm chúng hiện lại.
+message EntityRemoved = 12 {
+    channel reliable_ordered
+    from server
+    rate 50/s burst 100
+    tick: short_tick
+    ids: array[64] of replicated_id
+}
