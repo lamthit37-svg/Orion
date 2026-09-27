@@ -246,6 +246,20 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   Android arm64 bằng `adb` rồi chạy; trên Mac arm64 chạy preset tương ứng của Apple clang.
 - **Trạng thái:** mở. x64 đã đo: clang 20 trên Linux (local, ASan, UBSan, TSan, coverage).
 
+### NGHI-NGO-029 — SIMD viết tay cho `engine/math`
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** Hot path dùng `engine/math` theo lô (skinning, culling, AOI) cần SIMD viết tay
+  (SSE4.2 trên x64, NEON trên ARM64, ARCH §4.1) mới đạt ngân sách X.8; bản vô hướng hiện tại không
+  đủ.
+- **Lý do nghi:** ARCH §4.1 chọn SIMD, nhưng X.8 cấm tối ưu vi mô khi chưa có số đo, và chưa có hot
+  path thật để đo. Hiện clang build với `-march=x86-64-v2` (có SSE4.2) nên code vô hướng đã được
+  tự vector hoá khi compiler thấy lợi; MSVC và clang-cl chưa đặt `/arch:SSE4.2`.
+- **Cách kiểm:** khi có hot path đầu tiên dùng `engine/math` theo lô, benchmark bản vô hướng và
+  bản SIMD ở preset `profile` trên máy tham chiếu (ADR 0005); bản SIMD phải giữ đúng thứ tự phép
+  tính để golden test của `engine/math` không đổi.
+- **Trạng thái:** mở.
+
 ---
 
 ## Đã đóng

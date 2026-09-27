@@ -1,9 +1,11 @@
-// Benchmark của engine/math: so hàm lượng giác tất định với bản của thư viện chuẩn, và đo PRNG
-// dùng trong mô phỏng. Số đo ghi trong commit kèm preset và máy (X.8).
+// Benchmark của engine/math: so hàm lượng giác tất định với bản của thư viện chuẩn, và đo các phép
+// vector, quaternion, PRNG dùng trong mô phỏng. Số đo ghi trong commit kèm preset và máy (X.8).
 
 #include "engine/core/types.hpp"
+#include "engine/math/quat.hpp"
 #include "engine/math/random.hpp"
 #include "engine/math/trig.hpp"
+#include "engine/math/vec.hpp"
 
 #include <benchmark/benchmark.h>
 
@@ -77,6 +79,27 @@ void pcg32_next_u32(benchmark::State& state) {
     }
 }
 BENCHMARK(pcg32_next_u32);
+
+void quat_rotate(benchmark::State& state) {
+    const Quat q = from_axis_angle(normalize_or_zero(Vec3{1.0F, 2.0F, 3.0F}), 0.7F);
+    Vec3 v{1.0F, 0.0F, 0.0F};
+    for ([[maybe_unused]] auto iteration : state) {
+        v = rotate(q, v);
+        benchmark::DoNotOptimize(v);
+    }
+}
+BENCHMARK(quat_rotate);
+
+void vec3_normalize(benchmark::State& state) {
+    const std::array<f32, kInputCount> inputs = make_inputs(-50.0F, 50.0F);
+    usize i = 0;
+    for ([[maybe_unused]] auto iteration : state) {
+        const Vec3 v{inputs[i], inputs[(i + 1) & (kInputCount - 1)], 1.0F};
+        benchmark::DoNotOptimize(normalize_or_zero(v));
+        i = (i + 1) & (kInputCount - 1);
+    }
+}
+BENCHMARK(vec3_normalize);
 
 }  // namespace
 }  // namespace orion::math

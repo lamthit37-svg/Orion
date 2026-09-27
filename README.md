@@ -50,3 +50,6 @@ CHƠI chưa có.
   và `Result`, `Arena`, `Handle`/`SlotMap`, đọc ghi byte little-endian, UTF-8, thời gian và đồng
   hồ tiêm được, hàng đợi không khoá, log bất đồng bộ (text và JSON lines); bộ đếm cấp phát cho test
   (X.7).
+- `engine/math`: vector, quaternion, `WorldPos` f64 (ADR 0001), lượng giác tất định làm tròn trung
+  thành (số đo trong `trig.hpp`, giữ bằng golden test và bảng làm tròn đúng của
+  `tools/gen_math_reference.py`), PCG32 và SplitMix64.
