@@ -452,13 +452,17 @@ TEST(MessageChannels, FragmentsOfOneMessageMustAgreeAcrossPackets) {
         packet.reliable(Channel::ReliableUnordered, 0, count, index, data, offset);
         return packet.finish();
     };
+    // Một span cho cả gói lẫn kỳ vọng: C++ không bảo đảm hai lần viết cùng một chuỗi hằng là cùng
+    // một mảng, và bản Debug của MSVC dừng khi iterator của hai span khác nhau được dùng làm một
+    // khoảng (CI run 36346903473).
+    const std::span<const std::byte> last = bytes_of("cuối");
     EXPECT_TRUE(read(b, build(0, 2, 0, one, 100), kStart).empty());
     EXPECT_EQ(read_error(b, build(1, 2, 1, bytes_of("x"), 0)), ErrorCode::InvalidArgument);
     EXPECT_EQ(read_error(b, build(1, 3, 2, bytes_of("x"), 100)), ErrorCode::InvalidArgument);
-    const std::vector<Delivery> got = read(b, build(1, 2, 1, bytes_of("cuối"), 100), kStart);
+    const std::vector<Delivery> got = read(b, build(1, 2, 1, last, 100), kStart);
     ASSERT_EQ(got.size(), 1U);
     Bytes expected = one;
-    expected.insert(expected.end(), bytes_of("cuối").begin(), bytes_of("cuối").end());
+    expected.insert(expected.end(), last.begin(), last.end());
     EXPECT_EQ(got[0].data, expected);
 }
 
