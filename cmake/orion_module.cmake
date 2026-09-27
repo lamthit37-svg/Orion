@@ -300,3 +300,32 @@ function(orion_add_fuzz_target name)
         set_tests_properties("tests/fuzz:${name}" PROPERTIES TIMEOUT 120)
     endif()
 endfunction()
+
+# orion_add_protocol(<target> NAMESPACE <namespace> HEADER <đường include> SCHEMAS <tệp>...)
+#
+# Sinh C++ từ các tệp *.schema bằng tools/codegen/orion_codegen.py (ADR 0004; docs/formats/
+# protocol.md): header ở ${PROJECT_BINARY_DIR}/gen/<HEADER>, tệp .cpp cùng tên cạnh nó, rồi thêm cả
+# hai vào <target>. Code sinh ra nằm trong out/ và không được commit (CLAUDE.md X.10); nó được sinh
+# lại khi một schema hay một tệp của codegen đổi.
+function(orion_add_protocol target)
+    cmake_parse_arguments(PARSE_ARGV 1 arg "" "NAMESPACE;HEADER" "SCHEMAS")
+    if(arg_UNPARSED_ARGUMENTS OR NOT arg_NAMESPACE OR NOT arg_HEADER OR NOT arg_SCHEMAS)
+        message(FATAL_ERROR "orion_add_protocol: cần NAMESPACE, HEADER và ít nhất một SCHEMAS")
+    endif()
+    if(NOT arg_HEADER MATCHES "\\.hpp$")
+        message(FATAL_ERROR "orion_add_protocol: HEADER ${arg_HEADER} phải là tệp .hpp")
+    endif()
+    set(header "${PROJECT_BINARY_DIR}/gen/${arg_HEADER}")
+    string(REGEX REPLACE "\\.hpp$" ".cpp" source "${header}")
+    file(GLOB codegen CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/tools/codegen/*.py")
+    # -B: không ghi __pycache__ vào cây nguồn mỗi lần build.
+    add_custom_command(
+        OUTPUT "${header}" "${source}"
+        COMMAND "${Python3_EXECUTABLE}" -B "${PROJECT_SOURCE_DIR}/tools/codegen/orion_codegen.py"
+                --namespace "${arg_NAMESPACE}" --header "${header}" --source "${source}"
+                --include "${arg_HEADER}" --root "${PROJECT_SOURCE_DIR}" ${arg_SCHEMAS}
+        DEPENDS ${arg_SCHEMAS} ${codegen}
+        COMMENT "codegen: ${arg_HEADER}"
+        VERBATIM)
+    target_sources(${target} PRIVATE "${header}" "${source}")
+endfunction()

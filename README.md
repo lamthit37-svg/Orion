@@ -97,6 +97,13 @@ CHƠI chưa có.
   nằm ngay trong tin nhắn (không cấp phát), kiểu mạnh cho tick, tick rút gọn 16 bit khôi phục theo
   tick tham chiếu (ADR 0002) và id nhân bản (ADR 0006), bộ ghi và bộ đọc có lỗi "dính" để code sinh
   ra là một dãy lệnh thẳng.
+- `tools/codegen`: ngôn ngữ schema của protocol (`docs/formats/protocol.md`) và bộ sinh C++ (ADR
+  0004). Codegen kiểm mọi luật của schema (tên, khoảng, lượng tử hoá, cỡ tối đa theo kênh, khai báo
+  thừa) và báo `tệp:dòng:cột`; CMake sinh lại code vào `out/` khi schema hay codegen đổi
+  (`orion_add_protocol`). Code sinh ra không cấp phát, bên đọc là hàm toàn phần, tìm message theo id
+  bằng bảng xếp sẵn. Protocol thử `game/shared/tests/protocol/everything.schema` dùng mọi tính năng
+  và được test khứ hồi, test lỗi, fuzz trên mọi toolchain.
 - Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest, bitstream, địa chỉ,
-  connect token, gói dữ liệu, gói bắt tay, hai máy trạng thái của transport, lớp kênh tin nhắn),
+  connect token, gói dữ liệu, gói bắt tay, hai máy trạng thái của transport, lớp kênh tin nhắn, code
+  đọc do codegen sinh ra),
   `tools/run_fuzz.py` và job fuzz đêm; ở mọi preset khác ctest chạy lại corpus.

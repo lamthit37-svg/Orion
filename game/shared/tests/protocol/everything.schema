@@ -1,0 +1,78 @@
+# Schema thử của codegen: dùng mọi kiểu và mọi thuộc tính của docs/formats/protocol.md, mục Ngôn
+# ngữ schema. Code sinh từ nó chỉ link vào test và fuzz, không vào sản phẩm.
+version 7
+
+enum Color : u8 {
+    Red = 0
+    Green = 2
+    Blue = 7
+}
+
+enum Wide : u32 {
+    Small = 1
+    Huge = 4000000000
+}
+
+struct Point {
+    x: quantized[-100, 100, 0.5]
+    y: quantized[-100, 100, 0.5]
+}
+
+struct Shape {
+    color: Color
+    points: array[8] of Point
+    label: string[16]
+}
+
+message Ping = 1 {
+    channel unreliable
+    from client
+    rate 10/s burst 20
+}
+
+message Everything = 2 {
+    channel reliable_ordered
+    from client
+    rate 5/s burst 5
+    flag: bool
+    small_bits: bits(3)
+    full_bits: bits(64)
+    signed_value: int[-1000, 1000]
+    unsigned_value: int[0, 4000000000]
+    extreme: int[-9223372036854775808, 9223372036854775807]
+    angle: quantized[0, 6.2832, 0.001]
+    altitude: quantized[10, 20, 0.25]
+    blob: bytes[32]
+    name: string[24]
+    now: tick
+    recent: short_tick
+    target: replicated_id
+    wide: Wide
+    shape: Shape
+    grid: array[3] of array[2] of int[0, 9]
+    flags: array[4] of bool
+}
+
+message Status = 3 {
+    channel sequenced
+    from server
+    rate 60/s burst 120
+    color: Color
+    position: Point
+}
+
+message Notice = 40 {
+    channel reliable_unordered
+    from server
+    rate 1/s burst 1
+    text: string[100]
+}
+
+event Granted = 1 {
+    stream economy
+    amount: int[1, 1000]
+}
+
+event Audit = 9 {
+    stream audit
+}
