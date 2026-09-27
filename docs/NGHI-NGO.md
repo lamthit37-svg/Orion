@@ -217,22 +217,6 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
 - **Cách kiểm:** job Windows của CI build preset `dev` và `asan`.
 - **Trạng thái:** mở.
 
-### NGHI-NGO-025 — ASan của MSVC với thư viện tĩnh vcpkg không bật ASan
-
-- **Mở:** 2026-09-27
-- **Khẳng định:** Preset `asan` link được code dự án build với `/fsanitize=address` cùng thư viện
-  tĩnh của triplet `x64-windows-orion` (không bật ASan), không lỗi `detect_mismatch` về annotation
-  của `std::vector` và `std::string`.
-- **Lý do nghi:** STL của MSVC ghi dấu annotation của container vào object file; trộn object có và
-  không có ASan có thể bị linker từ chối.
-- **Cách kiểm:** job Windows của CI build preset `asan` khi đã có dependency đầu tiên.
-- **Trạng thái:** mở. Đã đo được lỗi: CI run 36316870461 (MSVC 14.51.36231) báo `LNK2038: mismatch
-  detected for 'annotate_string' / 'annotate_vector' / 'annotate_optional'` giữa `gtest.lib` và
-  test của dự án. Cách sửa đang chờ CI xác nhận: preset `asan` dùng triplet
-  `x64-windows-orion-asan`, build dependency với `/D_ANNOTATE_STL`; theo
-  `stl/inc/__msvc_sanitizer_annotate_container.hpp` của microsoft/STL (commit `f023531`), macro này
-  chèn code annotation mà không ghi `detect_mismatch` nào.
-
 ### NGHI-NGO-026 — Test xanh với đúng bản dependency ghim trong vcpkg
 
 - **Mở:** 2026-09-27
@@ -244,7 +228,9 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   toolchain clang 20 và cùng cờ. Chỉ CI trên GitHub dùng đúng bản ghim.
 - **Cách kiểm:** mỗi commit, đọc kết quả job `§8.3 linux` và `§8.2 windows` của CI; chúng build
   bằng vcpkg ở baseline của `vcpkg.json`.
-- **Trạng thái:** mở; đóng từng dependency khi CI xanh với nó.
+- **Trạng thái:** mở; đóng từng dependency khi CI xanh với nó. Đã xanh: gtest 1.18.0 và
+  benchmark 1.9.5, CI run 36317622896 (commit `406cd3a`): job `§8.3 linux`, `linux-tsan`,
+  `coverage`, `§8.2 windows` ở cả ba preset `dev`, `asan`, `ubsan`, mỗi job 63/63 test.
 
 ---
 
@@ -347,3 +333,21 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   `__cpp_lib_start_lifetime_as`, `__cpp_lib_containers_ranges`, `__cpp_lib_format_ranges`.
   `__cpp_nontype_template_args` chỉ là 201411 (chưa đủ tham số template kiểu lớp theo macro), đo
   khi build `toolchain_features` lần đầu; dự án không dùng tính năng này.
+
+### NGHI-NGO-025 — ASan của MSVC với thư viện tĩnh vcpkg không bật ASan
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** Preset `asan` link được code dự án build với `/fsanitize=address` cùng thư viện
+  tĩnh của vcpkg, không lỗi `detect_mismatch` về annotation của `std::vector` và `std::string`.
+- **Lý do nghi:** STL của MSVC ghi dấu annotation của container vào object file; trộn object có và
+  không có ASan có thể bị linker từ chối.
+- **Cách kiểm:** job Windows của CI build và chạy test preset `asan` khi đã có dependency đầu tiên.
+- **Trạng thái:** đóng 2026-09-27. Khẳng định ban đầu (dùng chung triplet `x64-windows-orion`) sai;
+  cách đang dùng là triplet `x64-windows-orion-asan`.
+- **Bằng chứng:** CI run 36316870461 (MSVC 14.51.36231) với triplet `x64-windows-orion` báo
+  `LNK2038: mismatch detected for 'annotate_string' / 'annotate_vector' / 'annotate_optional'`
+  giữa `gtest.lib` và test của dự án. Triplet `x64-windows-orion-asan` build dependency với
+  `/D_ANNOTATE_STL`; theo `stl/inc/__msvc_sanitizer_annotate_container.hpp` của microsoft/STL
+  (commit `f023531`), macro này chèn code annotation mà không ghi `detect_mismatch` nào. CI run
+  36317622896, job `§8.2 windows: asan`: `cmake --preset asan`, build và `ctest --preset asan`
+  xanh, `100% tests passed out of 63`.
