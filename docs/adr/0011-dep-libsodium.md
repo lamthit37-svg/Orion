@@ -38,7 +38,9 @@ kỹ hơn thường lệ.
    sinh số ngẫu nhiên (`randombytes_buf`), so sánh thời gian hằng (`sodium_memcmp`), xoá bộ nhớ
    (`sodium_memzero`). Không dùng `crypto_core_ed25519_is_valid_point` (hàm của CVE-2025-69277).
 4. Trên Linux, Android, iOS, port build bằng autotools (`vcpkg_make_configure(AUTORECONF)`), nên máy
-   dựng cần autoconf, automake, libtool. Trên Windows với MSVC, port build bằng msbuild.
+   dựng cần autoconf, autoconf-archive, automake, libtool: `vcpkg_run_autoreconf` của port
+   `vcpkg-make` ở baseline trên dừng khi thiếu một trong bốn gói (CI run 36327227835 đỏ vì thiếu
+   autoconf-archive). Trên Windows với MSVC, port build bằng msbuild.
 
 ## Bằng chứng
 
