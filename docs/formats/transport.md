@@ -192,7 +192,7 @@ Byte đầu của payload trong gói dữ liệu là `kind`:
 | `kind` | Payload |
 |---|---|
 | 0 | keep-alive: đúng 1 byte |
-| 1 | dữ liệu của tầng trên: byte `kind` rồi 1 tới 1170 byte |
+| 1 | dữ liệu của tầng trên (gói của lớp kênh, `channels.md`): byte `kind` rồi 1 tới 1170 byte |
 | 2 | ngắt kết nối: đúng 1 byte |
 
 Payload khác bị bỏ (gói vẫn được tính là đã nhận hợp lệ). 1170 là payload mà mọi số thứ tự chở được

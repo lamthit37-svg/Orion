@@ -85,7 +85,11 @@ CHƠI chưa có.
   ra nó), trao khoá X25519 có chữ ký của server; sau đó mỗi gói tối đa 1200 byte được mã hoá
   ChaCha20-Poly1305 với nonce lấy từ số thứ tự, có cửa sổ chống replay 1024 gói, và connection id
   tách khỏi địa chỉ nên client đổi mạng không mất kết nối. Client và server là máy trạng thái không
-  chạm socket, test tất định trên mạng giả.
+  chạm socket, test tất định trên mạng giả. Lớp kênh tin nhắn (`docs/formats/channels.md`):
+  `unreliable`, `sequenced`, `reliable_ordered`, `reliable_unordered` trên cùng một kết nối; xác
+  nhận theo gói bằng bitfield 32 gói, gửi lại theo RTT, cắt tin nhắn tới 32 KiB thành mảnh 1 KiB;
+  bộ nhớ tin nhắn tin cậy là ngân sách byte khai trước, bên gửi đặt tin nhắn vào bộ đệm nhận của
+  bên kia nên bên nhận chép thẳng, không cấp phát.
 - Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest, bitstream, địa chỉ,
-  connect token, gói dữ liệu, gói bắt tay, hai máy trạng thái của transport), `tools/run_fuzz.py`
-  và job fuzz đêm; ở mọi preset khác ctest chạy lại corpus.
+  connect token, gói dữ liệu, gói bắt tay, hai máy trạng thái của transport, lớp kênh tin nhắn),
+  `tools/run_fuzz.py` và job fuzz đêm; ở mọi preset khác ctest chạy lại corpus.
