@@ -78,6 +78,8 @@ CHƠI chưa có.
   có giới hạn; bên đọc là hàm toàn phần và buộc mỗi tin nhắn có đúng một cách mã hoá. Địa chỉ IPv4 và
   IPv6 kèm cổng: đọc chặt từ cấu hình, in theo dạng chuẩn RFC 5952. Socket UDP không chặn cho Linux,
   Android, Apple và Windows: gói lớn hơn bộ đệm bị bỏ chứ không bị cắt, ICMP từ lần gửi trước không
-  thành lỗi nhận, chờ gói có hạn.
-- Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest, bitstream, địa chỉ),
-  `tools/run_fuzz.py` và job fuzz đêm; ở mọi preset khác ctest chạy lại corpus.
+  thành lỗi nhận, chờ gói có hạn. Connect token (`docs/formats/connect_token.md`): auth ký Ed25519,
+  gắn khoá X25519 của client và khoá định danh của cụm server, hạn tối đa 120 giây; gateway kiểm tại
+  chỗ, client đọc được mà không cần khoá của auth.
+- Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest, bitstream, địa chỉ,
+  connect token), `tools/run_fuzz.py` và job fuzz đêm; ở mọi preset khác ctest chạy lại corpus.
