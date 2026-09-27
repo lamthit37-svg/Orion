@@ -51,3 +51,4 @@ Mỗi phương án một dòng, kèm lý do loại.
 | 0008 | [Một ngôn ngữ](0008-mot-ngon-ngu.md) | Chấp nhận |
 | 0009 | [CI trên GitHub Actions](0009-ci-github-actions.md) | Đề xuất |
 | 0010 | [Dependency: GoogleTest, Google Benchmark](0010-dep-googletest-benchmark.md) | Đề xuất |
+| 0011 | [Dependency: libsodium](0011-dep-libsodium.md) | Đề xuất |

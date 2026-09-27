@@ -221,16 +221,19 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
 
 - **Mở:** 2026-09-27
 - **Khẳng định:** Mọi test xanh khi build với đúng bản port ghim qua baseline vcpkg (gtest 1.18.0,
-  benchmark 1.9.5, và các port thêm sau), không chỉ với bản của gói hệ điều hành.
+  benchmark 1.9.5, libsodium 1.0.22, và các port thêm sau), không chỉ với bản của gói hệ điều hành.
 - **Lý do nghi:** Container dựng không tải được nguồn port vcpkg: proxy GitHub của phiên chỉ cho
   git đọc repo công khai và trả 403 cho `github.com/<repo>/archive/*.tar.gz`. Build cục bộ vì vậy
-  dùng gói Ubuntu 24.04 (gtest 1.14.0, benchmark 1.8.3) qua `CMakeUserPresets.json` riêng máy, cùng
-  toolchain clang 20 và cùng cờ. Chỉ CI trên GitHub dùng đúng bản ghim.
+  dùng gói Ubuntu 24.04 (gtest 1.14.0, benchmark 1.8.3, libsodium 1.0.18) qua
+  `CMakeUserPresets.json` riêng máy, cùng toolchain clang 20 và cùng cờ. Chỉ CI trên GitHub dùng
+  đúng bản ghim. Với libsodium, port còn build bằng autotools trên Linux và Android, msbuild trên
+  Windows (ADR 0011), là đường build chưa chạy lần nào.
 - **Cách kiểm:** mỗi commit, đọc kết quả job `§8.3 linux` và `§8.2 windows` của CI; chúng build
   bằng vcpkg ở baseline của `vcpkg.json`.
 - **Trạng thái:** mở; đóng từng dependency khi CI xanh với nó. Đã xanh: gtest 1.18.0 và
   benchmark 1.9.5, CI run 36317622896 (commit `406cd3a`): job `§8.3 linux`, `linux-tsan`,
-  `coverage`, `§8.2 windows` ở cả ba preset `dev`, `asan`, `ubsan`, mỗi job 63/63 test.
+  `coverage`, `§8.2 windows` ở cả ba preset `dev`, `asan`, `ubsan`, mỗi job 63/63 test. Chờ CI:
+  libsodium 1.0.22.
 
 ### NGHI-NGO-028 — Bit kết quả của `engine/math` giống nhau trên arm64
 

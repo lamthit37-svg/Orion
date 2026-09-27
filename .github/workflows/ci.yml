@@ -44,11 +44,12 @@ jobs:
         preset: [linux, linux-tsan]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: clang 20 và libstdc++ 14 (NGHI-NGO-015)
+      - name: clang 20, libstdc++ 14 (NGHI-NGO-015) và autotools cho port libsodium (ADR 0011)
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev
+            clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev \
+            autoconf automake libtool pkg-config
       - uses: ./.github/actions/setup-orion
         with:
           triplet: x64-linux-orion
@@ -65,11 +66,12 @@ jobs:
       VCPKG_FORCE_SYSTEM_BINARIES: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: clang 20 và libstdc++ 14 (NGHI-NGO-015)
+      - name: clang 20, libstdc++ 14 (NGHI-NGO-015) và autotools cho port libsodium (ADR 0011)
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev
+            clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev \
+            autoconf automake libtool pkg-config
       - uses: ./.github/actions/setup-orion
         with:
           triplet: arm64-linux-orion
@@ -85,11 +87,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: clang 20 và libstdc++ 14 (NGHI-NGO-015)
+      - name: clang 20, libstdc++ 14 (NGHI-NGO-015) và autotools cho port libsodium (ADR 0011)
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev
+            clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev \
+            autoconf automake libtool pkg-config
       - uses: ./.github/actions/setup-orion
         with:
           triplet: x64-linux-orion
@@ -105,11 +108,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: clang 20 và libstdc++ 14 (NGHI-NGO-015)
+      - name: clang 20, libstdc++ 14 (NGHI-NGO-015) và autotools cho port libsodium (ADR 0011)
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev
+            clang-20 libclang-rt-20-dev llvm-20 libstdc++-14-dev \
+            autoconf automake libtool pkg-config
       - uses: ./.github/actions/setup-orion
         with:
           triplet: x64-linux-orion
@@ -163,6 +167,10 @@ jobs:
       - uses: ./.github/actions/setup-orion
         with:
           triplet: arm64-android-orion
+      - name: autotools cho port vcpkg build bằng make (libsodium, ADR 0011)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends autoconf automake libtool pkg-config
       - name: NDK có sẵn trên runner
         run: |
           echo "ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
