@@ -85,5 +85,5 @@ CHƠI chưa có.
   ChaCha20-Poly1305 với nonce lấy từ số thứ tự và header làm associated data, cửa sổ chống replay
   1024 gói.
 - Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest, bitstream, địa chỉ,
-  connect token, gói dữ liệu), `tools/run_fuzz.py` và job fuzz đêm; ở mọi preset khác ctest chạy lại
-  corpus.
+  connect token, gói dữ liệu, gói bắt tay), `tools/run_fuzz.py` và job fuzz đêm; ở mọi preset khác
+  ctest chạy lại corpus.
