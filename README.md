@@ -58,8 +58,9 @@ CHƠI chưa có.
   phát sau khi dựng. Cầu nối JobSystem cho Jolt đến cùng `engine/physics`.
 - `engine/crypto` bọc libsodium (ADR 0011): BLAKE2b, chữ ký Ed25519, trao khoá X25519 ra hai khoá
   phiên, AEAD ChaCha20-Poly1305 với nonce lấy từ số thứ tự, băm mật khẩu Argon2id với chuỗi PHC
-  được kiểm trước khi tới libsodium; so sánh thời gian hằng và bí mật tự xoá. Test theo vector của
-  RFC 8032, 7748, 8439 và chuỗi Argon2id của bản cài đặt tham chiếu.
+  được kiểm trước khi tới libsodium, SipHash-2-4 có khoá cho bảng băm nhận khoá từ mạng; so sánh
+  thời gian hằng và bí mật tự xoá. Test theo vector của RFC 8032, 7748, 8439, chuỗi Argon2id của
+  bản cài đặt tham chiếu và vector của bản tham chiếu SipHash.
 - `engine/io`: đường dẫn ảo chung cho tệp rời và pak, tệp đọc theo vị trí và ghi nguyên tử (tệp tạm,
   đẩy xuống đĩa, đổi tên đè); build và test trên Windows và Linux, build cho Android; bản Apple có
   code nhưng chưa build lần nào (NGHI-NGO-032). Pak phiên bản 1 (`docs/formats/pak.md`, ADR 0012):
