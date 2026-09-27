@@ -258,7 +258,8 @@ endfunction()
 # X.4). Khi ORION_FUZZ bật (preset linux-fuzz) target link libFuzzer và fuzz thật bằng
 # tools/run_fuzz.py. Ở mọi preset khác nó link tests/fuzz/support/replay_main.cpp: không fuzz, chỉ
 # chạy lại từng tệp corpus, để crash đã sửa không quay lại trên cả năm toolchain. ctest chạy lại
-# corpus ở mọi preset.
+# corpus ở mọi preset, truyền thư mục chứ không truyền từng tệp: dòng lệnh Windows tối đa 32 767 ký
+# tự, và corpus vài trăm tệp đã vượt.
 function(orion_add_fuzz_target name)
     cmake_parse_arguments(PARSE_ARGV 1 arg "" "" "DEPS")
     if(arg_UNPARSED_ARGUMENTS)
@@ -273,11 +274,12 @@ function(orion_add_fuzz_target name)
     add_executable(${target} "${CMAKE_CURRENT_SOURCE_DIR}/${name}.cpp")
     orion_apply_flags(${target})
     target_link_libraries(${target} PRIVATE ${arg_DEPS})
-    set(replay_args ${corpus_files})
+    set(replay_args "${corpus}")
     if(ORION_FUZZ)
         # orion_apply_flags đã thêm fuzzer-no-link; cờ này link thêm main của libFuzzer.
         target_link_options(${target} PRIVATE -fsanitize=fuzzer)
-        list(PREPEND replay_args "-artifact_prefix=${CMAKE_CURRENT_BINARY_DIR}/${name}-")
+        # -runs=0: chạy mỗi input của thư mục một lần rồi thoát; không fuzz, không ghi vào thư mục.
+        list(PREPEND replay_args -runs=0 "-artifact_prefix=${CMAKE_CURRENT_BINARY_DIR}/${name}-")
     else()
         target_sources(${target} PRIVATE "${PROJECT_SOURCE_DIR}/tests/fuzz/support/replay_main.cpp")
     endif()
