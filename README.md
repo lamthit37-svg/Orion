@@ -53,3 +53,6 @@ CHƠI chưa có.
 - `engine/math`: vector, quaternion, `WorldPos` f64 (ADR 0001), lượng giác tất định làm tròn trung
   thành (số đo trong `trig.hpp`, giữ bằng golden test và bảng làm tròn đúng của
   `tools/gen_math_reference.py`), PCG32 và SplitMix64.
+- `engine/jobs`: luồng có tên (API gốc của từng nền tảng, ADR 0007), job system work-stealing với
+  deque Chase–Lev, `parallel_for` chia khối cố định để gộp kết quả tất định, không khoá và không cấp
+  phát sau khi dựng. Cầu nối JobSystem cho Jolt đến cùng `engine/physics`.

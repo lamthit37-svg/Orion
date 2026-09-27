@@ -262,6 +262,19 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   tính để golden test của `engine/math` không đổi.
 - **Trạng thái:** mở.
 
+### NGHI-NGO-030 — Job system đúng trên mô hình bộ nhớ yếu của arm64
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** Deque Chase–Lev, eventcount và `JobCounter` của `engine/jobs` không làm mất, không
+  chạy lặp job và không treo trên arm64 (Android, Apple Silicon), nơi CPU được phép sắp lại thứ tự
+  truy cập bộ nhớ nhiều hơn x64.
+- **Lý do nghi:** Thứ tự bộ nhớ theo bản đã chứng minh của Lê và cộng sự (PPoPP 2013), có lý do
+  từng dòng, và TSan xanh. Nhưng x64 giữ thứ tự ghi (TSO) nên che phần lớn lỗi thứ tự, TSan không
+  mô hình hàng rào (fence), và CI chưa chạy test trên arm64.
+- **Cách kiểm:** chạy `engine_jobs_tests --gtest_repeat=1000` trên thiết bị Android arm64 và trên
+  Mac Apple Silicon, hoặc trên runner Linux arm64 của CI.
+- **Trạng thái:** mở. Đã đo trên x64: 300 lượt lặp ở preset `local`, 50 lượt dưới TSan, xanh.
+
 ---
 
 ## Đã đóng
