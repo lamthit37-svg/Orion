@@ -203,6 +203,19 @@ Quy ước module (luật đầy đủ ở CLAUDE.md X.2): một module là mộ
 cạnh `.cpp` (hiến pháp IV); test của module nằm ở `<module>/tests/`; code riêng từng nền tảng nằm
 trong thư mục con `win/`, `linux/`, `android/`, `apple/` của module.
 
+`orion_add_module()` (`cmake/orion_module.cmake`) thi hành quy ước này:
+
+- tên target suy ra từ đường dẫn (`engine/core` thành `engine_core`, `game/server/lib/db` thành
+  `server_db`), và `DEPS` bị kiểm theo tầng ở §3 ngay lúc configure;
+- mọi header public được biên dịch một mình trong một tệp sinh ra, để header thiếu include thì đỏ
+  ngay trong module của nó;
+- `tests/*_test.cpp` thành một tệp chạy GoogleTest, `tests/*_bench.cpp` thành một tệp chạy Google
+  Benchmark; `tests/support/` là tiện ích test dùng chung (ví dụ bộ đếm cấp phát của
+  `engine/core`);
+- `main.cpp` không thuộc thư viện của module;
+- Android build cả `linux/` lẫn `android/`, vì cùng kernel Linux và bionic có đủ API POSIX cần
+  thiết; phần chỉ Android mới có nằm ở `android/`.
+
 ---
 
 ## 3. Tầng phụ thuộc

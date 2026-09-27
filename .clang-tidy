@@ -61,6 +61,8 @@ HeaderFilterRegex: '.*/(engine|game|tools|tests)/.*'
 SystemHeaders: false
 FormatStyle: none
 CheckOptions:
+  # ORION_ASSERT biến mất ở ship, nên điều kiện của nó không được có tác dụng phụ (X.5).
+  bugprone-assert-side-effect.AssertMacros: 'assert,ORION_ASSERT'
   bugprone-unused-return-value.CheckedReturnTypes: '::std::error_code;::std::error_condition;::std::errc;::std::expected;::orion::Error'
   cppcoreguidelines-macro-usage.AllowedRegexp: '^ORION_[A-Z0-9_]+$'
   cppcoreguidelines-macro-usage.CheckCapsOnly: false

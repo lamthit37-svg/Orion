@@ -4,6 +4,7 @@ project(Orion VERSION 0.1.0 LANGUAGES C CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(orion_flags)
+include(orion_module)
 enable_testing()
 
 add_subdirectory(tools)

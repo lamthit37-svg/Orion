@@ -237,6 +237,19 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
 - **Cách kiểm:** job Windows của CI build preset `asan` khi đã có dependency đầu tiên.
 - **Trạng thái:** mở.
 
+### NGHI-NGO-026 — Test xanh với đúng bản dependency ghim trong vcpkg
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** Mọi test xanh khi build với đúng bản port ghim qua baseline vcpkg (gtest 1.18.0,
+  benchmark 1.9.5, và các port thêm sau), không chỉ với bản của gói hệ điều hành.
+- **Lý do nghi:** Container dựng không tải được nguồn port vcpkg: proxy GitHub của phiên chỉ cho
+  git đọc repo công khai và trả 403 cho `github.com/<repo>/archive/*.tar.gz`. Build cục bộ vì vậy
+  dùng gói Ubuntu 24.04 (gtest 1.14.0, benchmark 1.8.3) qua `CMakeUserPresets.json` riêng máy, cùng
+  toolchain clang 20 và cùng cờ. Chỉ CI trên GitHub dùng đúng bản ghim.
+- **Cách kiểm:** mỗi commit, đọc kết quả job `§8.3 linux` và `§8.2 windows` của CI; chúng build
+  bằng vcpkg ở baseline của `vcpkg.json`.
+- **Trạng thái:** mở; đóng từng dependency khi CI xanh với nó.
+
 ---
 
 ## Đã đóng
