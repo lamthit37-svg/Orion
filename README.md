@@ -65,5 +65,7 @@ CHƠI chưa có.
   bản 1 (`docs/formats/pak.md`, ADR 0012): hash của header và index so với manifest trước khi phân
   tích, mỗi entry nén Zstd riêng (có dictionary) và được băm trước khi giải nén; đọc từ nhiều luồng,
   không cấp phát sau khi dành bộ đệm. Bộ ghi pak và huấn luyện dictionary chỉ có ở DEV và tool.
-- Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak), `tools/run_fuzz.py` và job
-  fuzz đêm; ở mọi preset khác ctest chạy lại corpus.
+  Manifest đã ký Ed25519 (`docs/formats/manifest.md`): người ký phải nằm trong danh sách khoá tin
+  cậy và chữ ký được kiểm trước khi đọc bản ghi pak; bộ ghi manifest chỉ có ở DEV và tool.
+- Khung fuzz `tests/fuzz/` (target: chuỗi băm mật khẩu, index pak, manifest), `tools/run_fuzz.py`
+  và job fuzz đêm; ở mọi preset khác ctest chạy lại corpus.
