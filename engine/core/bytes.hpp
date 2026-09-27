@@ -20,6 +20,22 @@
 
 namespace orion::core {
 
+// Cùng vùng byte dưới dạng unsigned char, cho API C nhận unsigned char* (libsodium). std::byte và
+// unsigned char có cùng biểu diễn, và đọc ghi mọi đối tượng qua kiểu ký tự là hợp lệ, nên phép đổi
+// kiểu con trỏ này không có UB. Đây là nền của serializer, chỗ X.3 cho dùng reinterpret_cast; mọi
+// module khác đi qua hai hàm này thay vì tự đổi kiểu.
+[[nodiscard]] inline std::span<const unsigned char> as_uchars(
+    const std::span<const std::byte> bytes) noexcept {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): serializer (X.3), xem trên.
+    return {reinterpret_cast<const unsigned char*>(bytes.data()), bytes.size()};
+}
+
+[[nodiscard]] inline std::span<unsigned char> as_writable_uchars(
+    const std::span<std::byte> bytes) noexcept {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): serializer (X.3), xem trên.
+    return {reinterpret_cast<unsigned char*>(bytes.data()), bytes.size()};
+}
+
 template <std::integral T>
 [[nodiscard]] constexpr T load_le(const std::span<const std::byte, sizeof(T)> bytes) noexcept {
     using U = std::make_unsigned_t<T>;

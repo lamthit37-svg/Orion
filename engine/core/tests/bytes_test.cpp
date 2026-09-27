@@ -89,6 +89,19 @@ TEST(ByteWriterReader, FloatsKeepEveryBit) {
     EXPECT_EQ(std::bit_cast<u64>(*second), std::bit_cast<u64>(-0.0));
 }
 
+TEST(Bytes, UnsignedCharViewsAliasTheSameMemory) {
+    std::array<std::byte, 3> buffer{std::byte{0x10}, std::byte{0x20}, std::byte{0xFF}};
+    const std::span<const unsigned char> read = as_uchars(buffer);
+    ASSERT_EQ(read.size(), 3U);
+    EXPECT_EQ(read[0], 0x10U);
+    EXPECT_EQ(read[2], 0xFFU);
+    const std::span<unsigned char> write = as_writable_uchars(buffer);
+    write[1] = 0x7F;
+    EXPECT_EQ(buffer[1], std::byte{0x7F});
+    EXPECT_EQ(static_cast<const void*>(read.data()), static_cast<const void*>(buffer.data()));
+    EXPECT_TRUE(as_uchars({}).empty());
+}
+
 TEST(ByteWriter, OverflowWritesNothingFurther) {
     std::array<std::byte, 5> buffer{};
     ByteWriter writer{buffer};
