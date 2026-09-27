@@ -16,6 +16,7 @@
 #include "engine/core/types.hpp"
 #include "engine/core/utf8.hpp"
 #include "engine/net/bitstream.hpp"
+#include "game/shared/time.hpp"
 
 #include <algorithm>
 #include <array>
@@ -35,12 +36,8 @@ enum class Sender : u8 {
     Server = 1,
 };
 
-// Số tick của mô phỏng, đếm từ 0 khi zone khởi động (ADR 0002).
-struct Tick {
-    u64 value = 0;
-
-    friend constexpr auto operator<=>(Tick, Tick) noexcept = default;
-};
+// Tick của mô phỏng (game/shared/time.hpp); trường `tick` của schema.
+using shared::Tick;
 
 // 16 bit thấp của một Tick; expand khôi phục tick đầy đủ từ một tick tham chiếu.
 struct ShortTick {
