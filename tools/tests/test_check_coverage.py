@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import os
+import pathlib
+import tempfile
 import unittest
 
 import check_coverage
@@ -52,6 +55,39 @@ class EvaluateTest(unittest.TestCase):
 
     def test_module_without_lines_counts_as_covered(self) -> None:
         self.assertEqual(check_coverage.Lines().percent, 100.0)
+
+
+class FreshProfilesTest(unittest.TestCase):
+    """Chỉ tệp .profraw không cũ hơn tệp test mới nhất được gộp."""
+
+    def test_skips_profiles_written_before_the_latest_build(self) -> None:
+        second = 1_000_000_000
+        base = 1_700_000_000 * second
+        with tempfile.TemporaryDirectory(prefix="orion-coverage-") as tmp:
+            root = pathlib.Path(tmp)
+            raw_dir = root / "coverage"
+            raw_dir.mkdir()
+            times = {
+                root / "engine_core_tests": base + 5 * second,
+                root / "engine_io_tests": base + 10 * second,
+                raw_dir / "1-old.profraw": base,
+                raw_dir / "2-new.profraw": base + 20 * second,
+                raw_dir / "3-same.profraw": base + 10 * second,
+            }
+            for path, mtime in times.items():
+                path.write_bytes(b"")
+                os.utime(path, ns=(mtime, mtime))
+            fresh, stale = check_coverage.fresh_profiles(
+                raw_dir, [str(root / "engine_core_tests"), str(root / "engine_io_tests")])
+        self.assertEqual(fresh, [str(raw_dir / "2-new.profraw"), str(raw_dir / "3-same.profraw")])
+        self.assertEqual(stale, 1)
+
+    def test_empty_directory_has_nothing_fresh(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="orion-coverage-") as tmp:
+            root = pathlib.Path(tmp)
+            (root / "engine_io_tests").write_bytes(b"")
+            self.assertEqual(
+                check_coverage.fresh_profiles(root, [str(root / "engine_io_tests")]), ([], 0))
 
 
 if __name__ == "__main__":

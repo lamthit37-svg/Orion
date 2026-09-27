@@ -125,17 +125,38 @@ def test_binaries(build: pathlib.Path) -> list[str]:
     return sorted(found)
 
 
+def fresh_profiles(raw_dir: pathlib.Path, binaries: list[str]) -> tuple[list[str], int]:
+    """Tệp .profraw ghi từ lần build gần nhất trở đi, và số tệp cũ hơn bị bỏ qua.
+
+    Mỗi tiến trình test ghi một tệp riêng (%p-%m), nên thư mục còn giữ tệp của các lần build trước.
+    Hàm trong tệp cũ có hash cấu trúc khác tệp chạy hiện tại: llvm-cov bỏ các hàm đó ("mismatched
+    data") và số dòng sai đi. Tệp chạy test mới nhất đánh dấu lần build gần nhất.
+    """
+    built = max(pathlib.Path(binary).stat().st_mtime_ns for binary in binaries)
+    fresh: list[str] = []
+    stale = 0
+    for path in sorted(raw_dir.glob("*.profraw")):
+        if path.stat().st_mtime_ns >= built:
+            fresh.append(str(path))
+        else:
+            stale += 1
+    return fresh, stale
+
+
 def collect(build: pathlib.Path) -> dict:
-    raw_dir = build / "coverage"
-    raw = sorted(str(p) for p in raw_dir.glob("*.profraw"))
-    if not raw:
-        raise SystemExit(f"check_coverage: không có tệp .profraw trong {raw_dir}; chạy ctest trước")
-    merged = raw_dir / "coverage.profdata"
-    subprocess.run([find_tool("llvm-profdata"), "merge", "-sparse", "-o", str(merged), *raw],
-                   check=True)
     binaries = test_binaries(build)
     if not binaries:
         raise SystemExit("check_coverage: ctest không có tệp chạy test nào")
+    raw_dir = build / "coverage"
+    raw, stale = fresh_profiles(raw_dir, binaries)
+    if stale:
+        print(f"check_coverage: bỏ qua {stale} tệp .profraw cũ hơn lần build gần nhất")
+    if not raw:
+        raise SystemExit(f"check_coverage: không có tệp .profraw nào mới hơn lần build gần nhất "
+                         f"trong {raw_dir}; chạy ctest trước")
+    merged = raw_dir / "coverage.profdata"
+    subprocess.run([find_tool("llvm-profdata"), "merge", "-sparse", "-o", str(merged), *raw],
+                   check=True)
     objects = [arg for binary in binaries[1:] for arg in ("-object", binary)]
     export = subprocess.run(
         [find_tool("llvm-cov"), "export", "-summary-only", f"-instr-profile={merged}",
