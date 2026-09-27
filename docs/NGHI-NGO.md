@@ -319,8 +319,11 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
 - **Cách kiểm:** build preset `android-arm64`, đẩy `replay_tests` và `tests/replay/golden/` lên
   thiết bị hay emulator arm64 bằng `adb push`, rồi chạy với `ORION_REPLAY_GOLDEN_DIR` trỏ tới thư
   mục golden đã đẩy; trên Mac arm64 chạy `ctest -R tests/replay` ở preset của Apple clang.
-- **Trạng thái:** mở. Đã khớp: clang 20 trên Linux x64 ở preset local, local-asan, local-ubsan,
-  local-tsan và local-coverage (cùng tệp golden, dù mức tối ưu và instrument khác nhau).
+- **Trạng thái:** mở, chỉ còn NDK arm64 và Apple arm64. Đã khớp: clang 20 trên Linux x64 ở preset
+  local, local-asan, local-ubsan, local-tsan và local-coverage (cùng tệp golden, dù mức tối ưu và
+  instrument khác nhau); và trong CI run 36357932698 (commit 925dc95): MSVC 14.51 x64 ở preset dev
+  và asan, clang-cl ở preset ubsan, clang 20 Linux x64 ở linux, linux-tsan, linux-coverage, clang 20
+  Linux arm64 ở linux-arm64 — log job `§8.2 windows: dev` có đủ bốn test `tests/replay` qua.
 
 ## Đã đóng
 
