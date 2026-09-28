@@ -4,9 +4,9 @@
 // transaction.
 //
 // - Câu SQL là kiểu Sql, chỉ dựng được lúc biên dịch từ literal chuỗi: giá trị không bao giờ bị
-// ghép
-//   vào SQL mà luôn đi qua tham số (Param, value.hpp), nên không cần hàm escape nào của libpq.
-//   Ngoại lệ duy nhất là execute_script, cho văn bản SQL tin cậy của repo: migration và test.
+//   ghép vào SQL mà luôn đi qua tham số (Param, value.hpp), nên không cần hàm escape nào của
+//   libpq. Ngoại lệ duy nhất là execute_script, cho văn bản SQL tin cậy của repo: migration và
+//   test.
 // - Mọi lời gọi có hạn (X.14): mỗi lời gọi nhận một mốc hạn trên đồng hồ đơn điệu. Code dùng API
 //   bất đồng bộ của libpq và chờ socket không quá mốc đó. Quá hạn khi truy vấn đã gửi thì kết nối
 //   bị đóng, vì huỷ truy vấn cần mở thêm một kết nối, việc cũng có thể treo; server thấy client mất

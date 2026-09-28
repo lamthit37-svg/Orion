@@ -6,8 +6,7 @@
 // - Chuỗi kết nối lấy từ biến môi trường ORION_TEST_POSTGRES. Không có thì test bỏ qua, trừ khi
 //   ORION_REQUIRE_POSTGRES=1: khi đó test đỏ, để job CI có PostgreSQL không bao giờ xanh vì bỏ qua.
 // - Mỗi test có một schema riêng, orion_test_<pid của backend>, đặt làm search_path của kết nối,
-// nên
-//   các tiến trình test chạy song song (ctest -j) không thấy bảng của nhau; schema bị xoá ở
+//   nên các tiến trình test chạy song song (ctest -j) không thấy bảng của nhau; schema bị xoá ở
 //   TearDown, và một schema cùng tên còn sót lại từ lần chạy bị giết giữa chừng bị xoá ở SetUp.
 // - Đồng hồ là đồng hồ giả không bao giờ chạy (X.4), nên mốc hạn deadline() không bao giờ tới và
 //   không test nào phụ thuộc tốc độ máy. Test về hạn dùng đồng hồ riêng của nó.
