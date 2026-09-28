@@ -377,6 +377,24 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   đăng nhập bằng SCRAM. Windows: job `§8.2 windows` (MSVC, clang-cl) build libpq bản vcpkg và chạy
   các test không cần DB; test cần DB chưa chạy.
 
+### NGHI-NGO-036 — Tiến trình server trên Windows dừng êm khi đóng console
+
+- **Mở:** 2026-09-28
+- **Khẳng định:** Trên Windows, tiến trình server nhận Ctrl+C, Ctrl+Break hay đóng cửa sổ console
+  thì `StopSignal::wait` trả về và main dừng êm, ghi hết log; với đóng console, việc đó xong trong
+  thời gian chờ của hệ điều hành.
+- **Lý do nghi:** Test của `game/server/lib/service` chỉ kiểm event có tên mà handler console báo
+  (`tests/win/`), không gửi sự kiện console thật: `GenerateConsoleCtrlEvent` đi tới mọi tiến trình
+  dùng chung console, kể cả ctest. Hành vi của hệ điều hành lấy từ tài liệu HandlerRoutine của
+  Microsoft (tệp nguồn `docs/handlerroutine.md` của repo MicrosoftDocs/Console-Docs), chưa chạy lần
+  nào: handler chạy trên một luồng mới hệ điều hành tạo trong tiến trình; với đóng console, trả
+  TRUE thì hệ điều hành kết thúc tiến trình; thời gian chờ của đóng console là
+  `SPI_GETHUNGAPPTIMEOUT`, mặc định 5000 ms; Ctrl+C, Ctrl+Break không có thời gian chờ.
+- **Cách kiểm:** trên máy dev Windows, khi có tiến trình server đầu tiên: chạy nó trong một cửa sổ
+  console riêng, bấm Ctrl+C, rồi đọc log (có dòng dừng êm, mã thoát 0); chạy lại, đóng cửa sổ, rồi
+  đọc tệp log mà stdout được chuyển vào (có dòng dừng êm trước khi tiến trình kết thúc).
+- **Trạng thái:** mở.
+
 ## Đã đóng
 
 ### NGHI-NGO-003 — simdjson: API mã lỗi đủ dùng khi tắt exception

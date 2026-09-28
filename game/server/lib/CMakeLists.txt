@@ -2,3 +2,4 @@
 add_subdirectory(db)
 add_subdirectory(http)
 add_subdirectory(ledger)
+add_subdirectory(service)

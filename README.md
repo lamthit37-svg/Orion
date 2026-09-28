@@ -125,6 +125,12 @@ CHƠI chưa có.
   bảng; tài khoản ngoài (nguồn, đích) không có số dư nên không bị tranh khoá. Test tiêm lỗi làm hỏng
   từng lần ghi, lúc commit và giữa post với commit, bằng lỗi lẫn crash của phiên: sổ không đổi, retry
   áp đúng một lần; test đồng thời cho tiêu trùng, retry xen nhau, deadlock và RepeatableRead.
+- `game/server/lib/service`: khung chung của mọi tiến trình server (`docs/formats/service.md`):
+  dòng lệnh `--config`, tệp cấu hình JSON từ chối trường lạ (mục chung `environment`, `log`,
+  `http`, `database`), tệp khoá hex và tệp chuỗi kết nối DB, trong đó bí mật dev (`*.dev.*`) chỉ nạp
+  ở môi trường local và không bao giờ trong bản ship (X.9); logger JSON lines toàn cục có luồng ghi
+  riêng; tín hiệu dừng (signalfd trên Linux, handler console trên Windows) cho main chờ, và tiến
+  trình tự yêu cầu dừng được. Test riêng Linux gửi SIGTERM, SIGINT thật.
 - `tools/migrate` (`orion_migrate`): áp `db/migrations/` lên PostgreSQL theo
   `docs/formats/migrations.md` — mỗi tệp một transaction, khoá advisory cho hai lần chạy cùng lúc,
   checksum BLAKE2b bắt migration đã áp bị sửa, từ chối migration tự kết thúc transaction của nó.
