@@ -15,6 +15,8 @@
 #   detail/                  thứ nội bộ; module khác không include
 #   win/ linux/ android/ apple/  code riêng nền tảng, chỉ build trên nền tảng đó
 #   tests/*_test.cpp         unit test (GoogleTest), chạy bằng ctest
+#   tests/win/ linux/ android/ apple/  unit test riêng nền tảng, vào cùng tệp chạy test, chỉ build
+#                            trên nền tảng đó (như code ở win/ linux/ android/ apple/)
 #   tests/*_bench.cpp        benchmark (Google Benchmark); ctest chạy một lượt ngắn để chắc nó chạy
 #   tests/support/           tiện ích test dùng chung, link vào test của module này và module sau
 #   main.cpp                 không thuộc thư viện; orion_add_program() dùng nó
@@ -231,7 +233,11 @@ function(_orion_module_tests target rel exceptions_flag test_deps test_external)
         list(APPEND common_test_libs ${target}_testing)
     endif()
 
-    file(GLOB unit_tests CONFIGURE_DEPENDS "${dir}/*_test.cpp")
+    set(unit_test_globs "${dir}/*_test.cpp")
+    foreach(platform IN LISTS ORION_PLATFORM_DIRS)
+        list(APPEND unit_test_globs "${dir}/${platform}/*_test.cpp")
+    endforeach()
+    file(GLOB unit_tests CONFIGURE_DEPENDS ${unit_test_globs})
     if(unit_tests)
         add_executable(${target}_tests ${unit_tests})
         orion_apply_flags(${target}_tests ${exceptions_flag})

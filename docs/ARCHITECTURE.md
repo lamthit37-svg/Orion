@@ -216,7 +216,8 @@ trong thư mục con `win/`, `linux/`, `android/`, `apple/` của module.
   ngay trong module của nó;
 - `tests/*_test.cpp` thành một tệp chạy GoogleTest, `tests/*_bench.cpp` thành một tệp chạy Google
   Benchmark; `tests/support/` là tiện ích test dùng chung (ví dụ bộ đếm cấp phát của
-  `engine/core`);
+  `engine/core`); test riêng một nền tảng nằm ở `tests/win/`, `tests/linux/`, `tests/android/`,
+  `tests/apple/`, vào cùng tệp chạy GoogleTest và chỉ build trên nền tảng đó, như code nền tảng;
 - `main.cpp` không thuộc thư viện của module;
 - Android build cả `linux/` lẫn `android/`, vì cùng kernel Linux và bionic có đủ API POSIX cần
   thiết; phần chỉ Android mới có nằm ở `android/`.
