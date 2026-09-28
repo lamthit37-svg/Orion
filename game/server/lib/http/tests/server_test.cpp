@@ -404,7 +404,11 @@ TEST_F(ServerTest, ClientClosingMidRequestIsNotAnError) {
     EXPECT_EQ(handled(), 0U);
 }
 
-// Client không đọc response lớn: ghi kẹt tới write_timeout thì server đóng kết nối.
+// Client không đọc response lớn thì server không giữ kết nối mãi, dù lượt ghi kẹt hay xong. Kẹt khi
+// bộ đệm của hai đầu không chứa hết 32 MiB (Linux ở máy dev: tcp_wmem tối đa 4 MiB, bộ đệm nhận của
+// client 64 KiB): write_timeout đóng kết nối. Xong khi chúng chứa hết (Windows ở CI run
+// 36372839028: client nhận đủ 33 554 579 byte): kết nối về chờ request, và idle_timeout đóng nó.
+// Đường nào cũng là đúng một lần quá hạn.
 TEST_F(ServerTest, ClientThatStopsReadingIsClosedAfterTheWriteTimeout) {
     set_handler([](const Request&) {
         Response response;
@@ -415,12 +419,26 @@ TEST_F(ServerTest, ClientThatStopsReadingIsClosedAfterTheWriteTimeout) {
     start();
     Client client(port(), 64 * 1024);
     client.send("GET / HTTP/1.1\r\nHost: t\r\n\r\n");
-    wait_until([&] { return stats().writing == 1; });
+    // Đọc handled() trước stats(): handler đã chạy thì waiting == 1 chỉ có thể là sau lượt ghi.
+    // Nhận cả hai pha vì lượt ghi xong nhanh có thể lọt giữa hai lần hỏi.
+    wait_until([&] {
+        if (handled() != 1) {
+            return false;
+        }
+        const ServerStats now = stats();
+        return now.writing == 1 || now.waiting == 1;
+    });
     advance(Limits{}.write_timeout);
-    wait_until([&] { return stats().connections() == 0; });
+    wait_until([&] {
+        const ServerStats now = stats();
+        return now.connections() == 0 || now.waiting == 1;
+    });
+    if (stats().connections() != 0) {
+        advance(Limits{}.idle_timeout);
+        wait_until([&] { return stats().connections() == 0; });
+    }
     EXPECT_EQ(stats().timed_out, 1U);
-    const std::string partial = client.read_to_end();
-    EXPECT_LT(partial.size(), usize{32} * 1024 * 1024);
+    static_cast<void>(client.read_to_end());
 }
 
 // Sau response kèm Connection: close, client không đóng phía nó: server chỉ chờ linger_timeout.

@@ -29,6 +29,18 @@ if(NOT DEFINED CMAKE_CXX_COMPILER)
     set(CMAKE_CXX_COMPILER "${_orion_clangxx}")
 endif()
 
+# Port vcpkg: vcpkg đặt CMAKE_SYSTEM_NAME cho port khi triplet có VCPKG_CMAKE_SYSTEM_NAME, và khi
+# đó CMake coi như toolchain đã đặt CMAKE_SYSTEM_PROCESSOR (CMakeDetermineSystem.cmake của CMake
+# 4.4). scripts/toolchains/linux.cmake của vcpkg đặt nó theo VCPKG_TARGET_ARCHITECTURE, nhưng tệp
+# này thay chỗ tệp đó (chainload), nên phải tự đặt; thiếu thì biến rỗng, và Boost.Context build
+# assembly x86_64 trên máy arm64 (CI run 36372839028, job linux-arm64). Build của dự án không đổi:
+# khi CMAKE_SYSTEM_NAME không được đặt, CMake ghi kiến trúc của máy đè lên biến này.
+if(VCPKG_TARGET_ARCHITECTURE STREQUAL "x64")
+    set(CMAKE_SYSTEM_PROCESSOR x86_64)
+elseif(VCPKG_TARGET_ARCHITECTURE STREQUAL "arm64")
+    set(CMAKE_SYSTEM_PROCESSOR aarch64)
+endif()
+
 # -fPIC: thư viện tĩnh được link vào tệp chạy PIE. -ffp-contract=off: CLAUDE.md X.11, NGHI-NGO-017.
 # CMake đọc toolchain nhiều lần trong cùng một scope, nên chỉ thêm cờ chưa có.
 foreach(_orion_flag -fPIC -ffp-contract=off)

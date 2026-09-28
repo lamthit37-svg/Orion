@@ -154,9 +154,13 @@ std::optional<Status> check_header(const RequestParser& parser, const usize head
         return Status::BadRequest;
     }
     // Không đọc body chunked hay trailer (ADR 0015, quyết định 5): client phải gửi Content-Length.
+    // count, không contains: basic_fields::contains có từ Beast 359 (CHANGELOG của Beast), còn
+    // Boost 1.83, bản tối thiểu CMake nhận (ADR 0015, quyết định 2), mang Beast 347.
+    // NOLINTNEXTLINE(readability-container-contains): xem trên.
     if (request.count(beast_http::field::transfer_encoding) != 0) {
         return Status::LengthRequired;
     }
+    // NOLINTNEXTLINE(readability-container-contains): như Transfer-Encoding ở trên.
     if (request.count(beast_http::field::expect) != 0) {
         return Status::ExpectationFailed;
     }
