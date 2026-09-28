@@ -339,8 +339,20 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   `server_db_tests` với service `postgres:18.6` qua mật khẩu (`ORION_REQUIRE_POSTGRES=1`, nên bỏ
   qua là đỏ). Windows: trên máy dev, PostgreSQL trong WSL2 (ARCH §1), đặt `ORION_TEST_POSTGRES` rồi
   `ctest --preset dev -R game/server/lib/db`.
-- **Trạng thái:** mở. Đã xanh cục bộ (libpq 16.15, PostgreSQL 16.15): 37 test, cả với một vai trò
-  không phải superuser đăng nhập bằng SCRAM.
+- **Trạng thái:** mở, chỉ còn phần Windows. Phần Linux đã có bằng chứng: CI run 36359751549 (commit
+  6ee8195), bốn job `§8.3 linux: linux`, `linux: linux-tsan`, `linux-arm64` và `coverage: llvm-cov`
+  xanh, link libpq 18.4 bản vcpkg (baseline ghim, ADR 0013), chạy trên service `postgres:18.6` (log
+  của service: `starting PostgreSQL 18.6 (Debian 18.6-1.pgdg13+2)`). Kết nối TCP đi qua
+  SCRAM-SHA-256: entrypoint của image (docker-library/postgres, `18/trixie/docker-entrypoint.sh`,
+  hàm `pg_setup_hba_conf`) ghi `host all all all` với phương thức bằng `password_encryption`, mặc
+  định `scram-sha-256` từ PostgreSQL 14. Job `linux`: 492 test qua, chỉ `Environment.ValuesAreUtf8`
+  bỏ qua theo thiết kế (nó chạy ở test `environment-utf8`); với `ORION_REQUIRE_POSTGRES=1`, test cần
+  DB không bỏ qua được. Log của service có đúng các lỗi mà test gây ra, và `FATAL: connection to
+  client lost` cho câu `pg_sleep(30)` bị bỏ giữa chừng, khoảng 1 s sau
+  (`client_connection_check_interval`). Cục bộ (libpq 16.15, PostgreSQL 16.15): 41 test của
+  server_db và 18 test của `tools/migrate` (12 cần DB) xanh, cả với một vai trò không phải superuser
+  đăng nhập bằng SCRAM. Windows: job `§8.2 windows` (MSVC, clang-cl) build libpq bản vcpkg và chạy
+  các test không cần DB; test cần DB chưa chạy.
 
 ## Đã đóng
 
