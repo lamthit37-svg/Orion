@@ -48,7 +48,15 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
 - **Lý do nghi:** ARCH §9. Boost.Asio ném exception ở nhiều API không có overload `error_code`.
 - **Cách kiểm:** build `server/lib/http` với `BOOST_NO_EXCEPTIONS` và một hàm
   `boost::throw_exception` gọi `ORION_VERIFY`; chạy test HTTP dưới ASan.
-- **Trạng thái:** mở.
+- **Trạng thái:** mở; đóng từng phần theo thư viện. libsodium, zstd, libpq là thư viện C;
+  simdjson dùng API mã lỗi (NGHI-NGO-003). Boost.Beast, Boost.Asio dùng được với
+  `BOOST_NO_EXCEPTIONS`, không cần module bật exception; đã đo cục bộ với Boost 1.83 của Ubuntu và
+  clang 20.1.2: `server_http` build với `-fno-exceptions -fno-rtti` (Boost tự bật
+  `BOOST_NO_EXCEPTIONS`, `BOOST_NO_RTTI`) và định nghĩa `boost::throw_exception` bằng
+  `ORION_VERIFY` (`detail/boost_throw.cpp`); 49 test của `server_http`, trong đó 18 test chạy
+  server thật qua loopback, xanh 10 lần liền ở mỗi preset `local`, `local-asan`, `local-ubsan`,
+  `local-tsan`. Còn chờ cho phần Boost: Boost 1.92 của vcpkg, MSVC và clang-cl (CI của commit thêm
+  server HTTP). Các thư viện khác của ARCH §4 đo khi được thêm.
 
 ### NGHI-NGO-004 — clang và TSan trong WSL2
 
@@ -245,6 +253,8 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   559/559 test, có 13 test của `server_http`); clang-tidy chạy với header của 4.6.11. Cục bộ không
   dùng gói Ubuntu (3.6.4 không biên dịch với clang 20) mà hai tệp single-header của đúng tag
   `v4.6.11`, build tĩnh không exception.
+  boost-beast 1.92.0 (ADR 0015): chờ CI của commit thêm nó. Cục bộ dùng `libboost1.83-dev` của
+  Ubuntu; hành vi của Beast mà server dựa vào đã đo trên 1.83 và ghi ở ADR 0015.
 
 ### NGHI-NGO-028 — Bit kết quả của `engine/math` giống nhau trên arm64
 

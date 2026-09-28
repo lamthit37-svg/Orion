@@ -110,12 +110,14 @@ CHƠI chưa có.
   định dạng nhị phân; mọi lời gọi có mốc hạn, chờ socket không quá hạn qua API bất đồng bộ của libpq
   (X.14); lỗi của server theo SQLSTATE; transaction RAII bắt được COMMIT bị server đổi thành
   ROLLBACK. Test chạy trên PostgreSQL thật; CI có service PostgreSQL 18.
-- `game/server/lib/http` (đang dựng): JSON của dịch vụ HTTP (`docs/formats/http.md`). `Document` đọc
-  bằng simdjson (ADR 0014) qua API mã lỗi và chép sang cây riêng, nên header không lộ simdjson; từ
-  chối khoá trùng, lồng quá 32 cấp, quá 65 536 giá trị. Accessor có kiểu cho parser request
-  (`integer(min, max)`, `string(max_bytes)`, `expect_only` từ chối trường lạ). `Writer` ghi JSON gọn,
-  byte UTF-8 hỏng thành U+FFFD như log. Fuzz target `json_document` kiểm rằng ghi, đọc, ghi lại ra
-  đúng chuỗi cũ.
+- `game/server/lib/http`: server HTTP/1.1 và JSON của các dịch vụ HTTP (`docs/formats/http.md`).
+  Server trên Boost.Beast (ADR 0015) có giới hạn cứng về header, body và thời gian đọc, ghi; vượt
+  thì trả 4xx và đóng êm (X.14). Handler chạy trên nhóm worker với hàng đợi có giới hạn (đầy thì
+  503), nên được gọi DB đồng bộ mà không chặn luồng IO. Mọi hạn chạy trên đồng hồ tiêm được, nên
+  test qua loopback không chờ thật. `parse_request` đọc request từ bộ nhớ bằng đúng các luật của
+  server, cho fuzz target `http_request` và test của dịch vụ. `json::Document` đọc bằng simdjson
+  (ADR 0014) qua API mã lỗi và chép sang cây riêng; từ chối khoá trùng, lồng quá 32 cấp, quá
+  65 536 giá trị; accessor có kiểu cho parser request. `json::Writer` ghi JSON gọn.
 - `game/server/lib/ledger`: sổ ghi kép của kinh tế (X.9, `docs/formats/ledger.md`), bảng ở
   `db/migrations/0001_ledger.sql`. Mỗi bút toán (dòng chuyển tài sản, lượt chuyển vật phẩm có id bền)
   áp nguyên khối trong transaction của bên gọi, kèm khoá idempotency và digest để retry chỉ áp một

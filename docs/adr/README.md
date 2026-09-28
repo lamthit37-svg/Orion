@@ -55,3 +55,4 @@ Mỗi phương án một dòng, kèm lý do loại.
 | 0012 | [Dependency: Zstandard (zstd)](0012-dep-zstd.md) | Đề xuất |
 | 0013 | [Dependency: libpq](0013-dep-libpq.md) | Đề xuất |
 | 0014 | [Dependency: simdjson](0014-dep-simdjson.md) | Đề xuất |
+| 0015 | [Dependency: Boost.Beast, Boost.Asio](0015-dep-boost-beast.md) | Đề xuất |

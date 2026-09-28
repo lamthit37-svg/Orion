@@ -72,6 +72,11 @@ CheckOptions:
   misc-const-correctness.AnalyzeValues: true
   misc-const-correctness.AnalyzeReferences: true
   misc-const-correctness.WarnPointersAsValues: false
+  # Header public của Boost chỉ chuyển tiếp tới impl/ và detail/, và Boost không có pragma IWYU, nên
+  # include-cleaner đòi include thẳng các tệp nội bộ đó (đo với Boost 1.83: nó đòi
+  # boost/system/detail/error_code.hpp thay cho boost/system/error_code.hpp). Include của Boost theo
+  # tài liệu của Boost; chỉ game/server/lib/http dùng Boost (ADR 0015).
+  misc-include-cleaner.IgnoreHeaders: 'boost/.*'
   # Đã đo với clang-tidy 20: thân hàm được tính là cấp lồng 1, nên ngưỡng 5 cho phép đúng 4 cấp
   # lồng bên trong thân hàm và báo cấp thứ 5 (X.2). LineThreshold đếm từ dòng có { mở thân hàm tới
   # dòng ngay trước }.

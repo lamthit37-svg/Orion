@@ -21,7 +21,7 @@ Luồng tạo tuỳ tiện là nguồn race khó tái hiện nhất. CLAUDE.md X
    | world, instance | mỗi zone một luồng mô phỏng; job worker; một luồng IO mạng |
    | gateway | các luồng IO mạng; không giữ trạng thái game |
    | persistence | một luồng IO mạng; một luồng nhận lệnh ghi, gom lô, gửi qua libpq pipeline |
-   | dịch vụ HTTP | một nhóm luồng IO cố định của Boost.Asio; pool kết nối DB riêng nếu cần |
+   | dịch vụ HTTP | một nhóm luồng IO cố định của Boost.Asio; một nhóm worker cố định chạy handler, với hàng đợi có giới hạn, và pool kết nối DB riêng của các worker (`server/lib/http`, ADR 0015) |
    | client | luồng chính; luồng render; một luồng IO streaming; luồng của FMOD; job worker bằng số core trừ 2 |
    | tool | theo nhu cầu, vẫn tạo qua `engine/jobs` |
 

@@ -1,0 +1,6 @@
+POST /v1/login HTTP/1.1
+Host: auth
+Content-Type: application/json
+Content-Length: 44
+
+{"email":"a@b.vn","password":"mật khẩu"}

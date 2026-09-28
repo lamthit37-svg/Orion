@@ -1,0 +1,5 @@
+GET /v1/account?id=42&lang=vi HTTP/1.1
+Host: account
+Accept: application/json
+X-Request-Id: 7f3a
+
