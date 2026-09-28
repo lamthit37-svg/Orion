@@ -7,3 +7,9 @@ if(WIN32)
     # Winsock 2 cho WSAPoll của win/socket_wait.cpp; libpq tĩnh cũng cần nó.
     target_link_libraries(server_db PRIVATE ws2_32)
 endif()
+
+if(TARGET server_db_testing)
+    # Thư mục migration của repo cho apply_repository_migrations (tests/support).
+    target_compile_definitions(server_db_testing PRIVATE
+        ORION_MIGRATIONS_DIR="${PROJECT_SOURCE_DIR}/db/migrations")
+endif()

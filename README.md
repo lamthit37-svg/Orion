@@ -110,6 +110,13 @@ CHƠI chưa có.
   định dạng nhị phân; mọi lời gọi có mốc hạn, chờ socket không quá hạn qua API bất đồng bộ của libpq
   (X.14); lỗi của server theo SQLSTATE; transaction RAII bắt được COMMIT bị server đổi thành
   ROLLBACK. Test chạy trên PostgreSQL thật; CI có service PostgreSQL 18.
+- `game/server/lib/ledger`: sổ ghi kép của kinh tế (X.9, `docs/formats/ledger.md`), bảng ở
+  `db/migrations/0001_ledger.sql`. Mỗi bút toán (dòng chuyển tài sản, lượt chuyển vật phẩm có id bền)
+  áp nguyên khối trong transaction của bên gọi, kèm khoá idempotency và digest để retry chỉ áp một
+  lần; số dư không âm và mỗi vật phẩm một chủ được giữ bằng câu SQL có điều kiện cùng ràng buộc của
+  bảng; tài khoản ngoài (nguồn, đích) không có số dư nên không bị tranh khoá. Test tiêm lỗi làm hỏng
+  từng lần ghi, lúc commit và giữa post với commit, bằng lỗi lẫn crash của phiên: sổ không đổi, retry
+  áp đúng một lần; test đồng thời cho tiêu trùng, retry xen nhau, deadlock và RepeatableRead.
 - `tools/migrate` (`orion_migrate`): áp `db/migrations/` lên PostgreSQL theo
   `docs/formats/migrations.md` — mỗi tệp một transaction, khoá advisory cho hai lần chạy cùng lúc,
   checksum BLAKE2b bắt migration đã áp bị sửa, từ chối migration tự kết thúc transaction của nó.

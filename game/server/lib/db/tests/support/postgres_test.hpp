@@ -25,6 +25,13 @@ namespace orion::db::testing {
 // Lỗi kèm thông điệp của server, cho thông điệp khi test đỏ: "Aborted: db: ... — <thông điệp>".
 [[nodiscard]] std::string describe(const Error& error, const Connection& connection);
 
+// Áp mọi migration của repo (db/migrations/, docs/formats/migrations.md) vào schema đầu của
+// search_path, theo thứ tự tên tệp, mỗi tệp một script. Không ghi schema_migrations: test của
+// module dùng DB cần schema chứ không cần lịch sử, thứ tools/migrate có test riêng. Lỗi: Io khi
+// không đọc được thư mục hay tệp, và lỗi của server khi script hỏng (thông điệp ở last_error()).
+[[nodiscard]] Result<void> apply_repository_migrations(Connection& connection,
+                                                       core::MonoTime deadline);
+
 class PostgresTest : public ::testing::Test {
 protected:
     void SetUp() override;

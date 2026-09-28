@@ -10,12 +10,19 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <array>
 #include <expected>
+#include <filesystem>
 #include <format>
+#include <fstream>
+#include <ios>
+#include <iterator>
 #include <optional>
 #include <string>
+#include <system_error>
 #include <utility>
+#include <vector>
 
 namespace orion::db::testing {
 namespace {
@@ -38,6 +45,36 @@ constexpr core::Duration kNever = core::Duration::seconds(3'600);
 
 std::string describe(const Error& error, const Connection& connection) {
     return std::format("{} — {}", error, connection.last_error());
+}
+
+Result<void> apply_repository_migrations(Connection& connection, const core::MonoTime deadline) {
+    // u8: CMake ghi đường dẫn theo UTF-8, và path từ chuỗi hẹp trên Windows đọc theo code page
+    // ANSI.
+    const std::filesystem::path dir(u8"" ORION_MIGRATIONS_DIR);
+    std::error_code error;
+    std::vector<std::filesystem::path> files;
+    for (std::filesystem::directory_iterator it(dir, error), end; !error && it != end;
+         it.increment(error)) {
+        if (it->path().extension() == ".sql") {
+            files.push_back(it->path());
+        }
+    }
+    if (error) {
+        return fail(ErrorCode::Io, "test: không đọc được db/migrations/", error.value());
+    }
+    std::ranges::sort(files);
+    for (const std::filesystem::path& file : files) {
+        std::ifstream in(file, std::ios::binary);
+        if (!in.is_open()) {
+            return fail(ErrorCode::Io, "test: không mở được tệp migration");
+        }
+        const std::string script{std::istreambuf_iterator<char>(in),
+                                 std::istreambuf_iterator<char>()};
+        if (const Result<void> applied = connection.execute_script(script, deadline); !applied) {
+            return applied;
+        }
+    }
+    return {};
 }
 
 void PostgresTest::SetUp() {
