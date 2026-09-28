@@ -37,6 +37,12 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   linux-arm64`), `x64-windows-orion` (`§8.2 windows` `dev`, `ubsan`), `x64-windows-orion-asan`
   (`§8.2 windows` `asan`) và `arm64-android-orion` (`§8.7 android-arm64`), cùng CI run 36332765141
   (commit `0580b42`). `arm64-ios-orion` chưa build: job iOS chỉ chạy khi bật tay (NGHI-NGO-008).
+  boost-beast 1.92.0 và các port Boost nó kéo theo, trong đó boost-asio với tính năng mặc định
+  `spawn` kéo boost-context (log vcpkg: `boost-asio[core,deadline-timer,spawn]`): xanh với
+  `x64-linux-orion`, `arm64-linux-orion`, `x64-windows-orion`, `x64-windows-orion-asan` ở CI run
+  36374741449 (commit `3d7cb02`). Trước đó, CI run 36372839028 (commit `68c8b06`) đỏ ở
+  `arm64-linux-orion`: boost-context build assembly x86_64 trên máy arm64, vì toolchain chainload
+  không đặt `CMAKE_SYSTEM_PROCESSOR` cho port; `3d7cb02` sửa ở `cmake/toolchains/linux-clang.cmake`.
 
 ### NGHI-NGO-002 — Thư viện ngoài build được khi tắt exception và RTTI
 
@@ -55,8 +61,11 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   `BOOST_NO_EXCEPTIONS`, `BOOST_NO_RTTI`) và định nghĩa `boost::throw_exception` bằng
   `ORION_VERIFY` (`detail/boost_throw.cpp`); 49 test của `server_http`, trong đó 18 test chạy
   server thật qua loopback, xanh 10 lần liền ở mỗi preset `local`, `local-asan`, `local-ubsan`,
-  `local-tsan`. Còn chờ cho phần Boost: Boost 1.92 của vcpkg, MSVC và clang-cl (CI của commit thêm
-  server HTTP). Các thư viện khác của ARCH §4 đo khi được thêm.
+  `local-tsan`. Với Boost 1.92 của vcpkg: CI run 36374741449 (commit `3d7cb02`) xanh ở mọi job —
+  MSVC 14.51.36231 (preset `dev`, `asan`) và clang-cl (preset `ubsan`), mỗi job 596/596 test, có
+  49 test của `server_http`; clang 20 Linux x64 (`linux`, `linux-tsan`, `coverage`, clang-tidy) và
+  Linux arm64 (`linux-arm64`, 596/596). Phần Boost vì vậy đã đo; các thư viện khác của ARCH §4 đo
+  khi được thêm.
 
 ### NGHI-NGO-004 — clang và TSan trong WSL2
 
@@ -253,8 +262,14 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   559/559 test, có 13 test của `server_http`); clang-tidy chạy với header của 4.6.11. Cục bộ không
   dùng gói Ubuntu (3.6.4 không biên dịch với clang 20) mà hai tệp single-header của đúng tag
   `v4.6.11`, build tĩnh không exception.
-  boost-beast 1.92.0 (ADR 0015): chờ CI của commit thêm nó. Cục bộ dùng `libboost1.83-dev` của
-  Ubuntu; hành vi của Beast mà server dựa vào đã đo trên 1.83 và ghi ở ADR 0015.
+  boost-beast 1.92.0 (ADR 0015): CI run 36374741449 (commit `3d7cb02`) xanh ở mọi job — Boost chỉ
+  header, cộng boost-context build từ mã nguồn; test của `server_http` (49) và replay corpus của
+  `http_request` xanh ở `linux`, `linux-tsan`, `coverage`, `linux-arm64` và `windows` `dev`,
+  `asan`, `ubsan`; clang-tidy chạy với header của 1.92.0 và bắt được `basic_fields::contains`, thứ
+  1.83 không có (commit `3d7cb02`). Commit thêm server (`68c8b06`, CI run 36372839028) đỏ ở ba chỗ:
+  toolchain arm64 (NGHI-NGO-001), test ghi quá hạn trên Windows, phát hiện clang-tidy đó; `3d7cb02`
+  sửa cả ba. Cục bộ dùng `libboost1.83-dev` của Ubuntu; hành vi của Beast mà server dựa vào đã đo
+  trên 1.83 và ghi ở ADR 0015, và test giữ nó xanh trên cả 1.92.
 
 ### NGHI-NGO-028 — Bit kết quả của `engine/math` giống nhau trên arm64
 
