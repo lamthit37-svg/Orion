@@ -50,15 +50,6 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   `boost::throw_exception` gọi `ORION_VERIFY`; chạy test HTTP dưới ASan.
 - **Trạng thái:** mở.
 
-### NGHI-NGO-003 — simdjson: API mã lỗi đủ dùng khi tắt exception
-
-- **Mở:** 2026-09-27
-- **Khẳng định:** Parser request HTTP viết được hoàn toàn bằng API `simdjson_result`/`error_code`
-  với `SIMDJSON_EXCEPTIONS=0`.
-- **Lý do nghi:** ARCH §9. Một số tiện ích của simdjson chỉ có bản ném exception.
-- **Cách kiểm:** build parser request với `-DSIMDJSON_EXCEPTIONS=0 -fno-exceptions`; fuzz 10 phút.
-- **Trạng thái:** mở.
-
 ### NGHI-NGO-004 — clang và TSan trong WSL2
 
 - **Mở:** 2026-09-27
@@ -247,6 +238,9 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   dưới đây; test pak của `engine/io` (đọc entry Zstd, có dictionary) xanh ở `linux`, `linux-tsan`,
   `coverage`, `linux-arm64` và `windows` `dev`, `asan`, `ubsan`; clang-tidy chạy với header của
   1.5.7 (khác 1.5.5 ở chỗ khai báo `ZSTD_getErrorCode`, commit `0580b42`).
+  simdjson 4.6.11 (ADR 0014): chờ CI của commit thêm nó. Cục bộ không dùng gói Ubuntu (3.6.4 không
+  biên dịch với clang 20) mà hai tệp single-header của đúng tag `v4.6.11`, build tĩnh không
+  exception; port vcpkg build từ mã nguồn bằng CMake của simdjson.
 
 ### NGHI-NGO-028 — Bit kết quả của `engine/math` giống nhau trên arm64
 
@@ -355,6 +349,29 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   các test không cần DB; test cần DB chưa chạy.
 
 ## Đã đóng
+
+### NGHI-NGO-003 — simdjson: API mã lỗi đủ dùng khi tắt exception
+
+- **Mở:** 2026-09-27
+- **Khẳng định:** Parser request HTTP viết được hoàn toàn bằng API `simdjson_result`/`error_code`
+  với `SIMDJSON_EXCEPTIONS=0`.
+- **Lý do nghi:** ARCH §9. Một số tiện ích của simdjson chỉ có bản ném exception.
+- **Cách kiểm:** build parser request với `-DSIMDJSON_EXCEPTIONS=0 -fno-exceptions`; fuzz 10 phút.
+- **Trạng thái:** đóng 2026-09-28 cho simdjson 4.6.11; đo lại khi đổi phiên bản (ADR 0014).
+- **Bằng chứng:** mọi lời gọi simdjson của dự án nằm trong `game/server/lib/http/json.cpp`
+  (`check_layers.py` chặn `<simdjson.h>` ở nơi khác); parser request của từng endpoint chỉ thấy
+  `json.hpp`. Tệp đó biên dịch với `-fno-exceptions -fno-rtti -DSIMDJSON_EXCEPTIONS=0` (dòng lệnh
+  trong `compile_commands.json` của preset `local`), clang 20.1.2, simdjson 4.6.11 (hai tệp
+  single-header của tag `v4.6.11`). Với `SIMDJSON_EXCEPTIONS=0`, `simdjson.h` không khai báo bản
+  ném exception nào (chúng nằm trong `#if SIMDJSON_EXCEPTIONS`), nên dùng nhầm là lỗi biên dịch chứ
+  không phải lỗi lúc chạy; header tự đặt macro về 0 khi không có `__cpp_exceptions` hay
+  `_CPPUNWIND`, nên MSVC với `/EHs-c-` đi cùng đường. API đã dùng, đủ cho mọi loại giá trị của RFC
+  8259: `dom::parser` (`allocate`, `parse`), `dom::element` (`type`, `get_int64`, `get_uint64`,
+  `get_double`, `get_string`, `get_bool`, `get_array`, `get_object`), iterator của `dom::array` và
+  `dom::object`. 13 test của `server_http` xanh ở `local`, `local-asan`, `local-ubsan`,
+  `local-tsan`, `local-coverage`. Fuzz `json_document` (preset `local-fuzz`: libFuzzer, ASan, UBSan)
+  trên đúng code của commit thêm module: 611 giây, 23 692 042 lượt (khoảng 38 800 lượt mỗi
+  giây), RSS đỉnh 443 MB, không crash.
 
 ### NGHI-NGO-005 — CMake phát `/external:I` cho include SYSTEM với MSVC
 

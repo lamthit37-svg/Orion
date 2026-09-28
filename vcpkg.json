@@ -12,6 +12,14 @@
       "platform": "linux | windows"
     },
     "libsodium",
+    {
+      "name": "simdjson",
+      "default-features": false,
+      "features": [
+        "utf8-validation"
+      ],
+      "platform": "linux | windows"
+    },
     "zstd"
   ]
 }
