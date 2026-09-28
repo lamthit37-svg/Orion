@@ -238,9 +238,13 @@ dựng, Ubuntu 24.04.4 LTS, kernel 6.18.44 x86_64, 4 core, 15 GiB RAM; clang 20.
   dưới đây; test pak của `engine/io` (đọc entry Zstd, có dictionary) xanh ở `linux`, `linux-tsan`,
   `coverage`, `linux-arm64` và `windows` `dev`, `asan`, `ubsan`; clang-tidy chạy với header của
   1.5.7 (khác 1.5.5 ở chỗ khai báo `ZSTD_getErrorCode`, commit `0580b42`).
-  simdjson 4.6.11 (ADR 0014): chờ CI của commit thêm nó. Cục bộ không dùng gói Ubuntu (3.6.4 không
-  biên dịch với clang 20) mà hai tệp single-header của đúng tag `v4.6.11`, build tĩnh không
-  exception; port vcpkg build từ mã nguồn bằng CMake của simdjson.
+  simdjson 4.6.11 (ADR 0014): CI run 36366955171 (commit `a182cd2`) xanh ở mọi job — port build
+  từ mã nguồn bằng CMake của simdjson cho các job Linux x64, Linux arm64 và Windows (Android, iOS
+  không cài, `vcpkg.json`); test của `server_http` và replay corpus của `json_document` xanh ở
+  `linux`, `linux-tsan`, `coverage`, `linux-arm64` và `windows` `dev`, `asan`, `ubsan` (job `dev`:
+  559/559 test, có 13 test của `server_http`); clang-tidy chạy với header của 4.6.11. Cục bộ không
+  dùng gói Ubuntu (3.6.4 không biên dịch với clang 20) mà hai tệp single-header của đúng tag
+  `v4.6.11`, build tĩnh không exception.
 
 ### NGHI-NGO-028 — Bit kết quả của `engine/math` giống nhau trên arm64
 
