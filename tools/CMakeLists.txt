@@ -12,3 +12,8 @@ add_custom_target(orion_check_style
 add_test(NAME tools.gates
     COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s tools/tests -t tools
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+
+# orion_migrate cần server_db, thứ chỉ build cho Linux và Windows (game/CMakeLists.txt).
+if(TARGET server_db)
+    add_subdirectory(migrate)
+endif()

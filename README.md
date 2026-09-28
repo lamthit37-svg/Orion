@@ -30,6 +30,7 @@ Cần có:
 | Coverage (X.4) | build và `ctest --preset linux-coverage`, rồi `tools/check_coverage.py out/build/linux-coverage` |
 | Cổng kiểm | `python3.13 tools/check_style.py`, `check_layers.py`, `check_tracked.py` |
 | Phiên bản protocol (X.10) | `python3.13 tools/check_protocol_version.py --base origin/main` |
+| Áp migration (X.14) | đặt `ORION_DATABASE` là chuỗi kết nối libpq, chạy `orion_migrate` (`--check` để chỉ kiểm) |
 | Test cần PostgreSQL (ARCH §8) | đặt `ORION_TEST_POSTGRES` là chuỗi kết nối libpq trước khi chạy `ctest`; thiếu thì các test đó bỏ qua |
 | Sửa format tự động | `python3.13 tools/check_style.py --fix` |
 
@@ -109,6 +110,10 @@ CHƠI chưa có.
   định dạng nhị phân; mọi lời gọi có mốc hạn, chờ socket không quá hạn qua API bất đồng bộ của libpq
   (X.14); lỗi của server theo SQLSTATE; transaction RAII bắt được COMMIT bị server đổi thành
   ROLLBACK. Test chạy trên PostgreSQL thật; CI có service PostgreSQL 18.
+- `tools/migrate` (`orion_migrate`): áp `db/migrations/` lên PostgreSQL theo
+  `docs/formats/migrations.md` — mỗi tệp một transaction, khoá advisory cho hai lần chạy cùng lúc,
+  checksum BLAKE2b bắt migration đã áp bị sửa, từ chối migration tự kết thúc transaction của nó.
+  Test áp mỗi migration của repo lên schema rỗng và lên schema của bản trước (X.14).
 - `tools/codegen`: ngôn ngữ schema của protocol (`docs/formats/protocol.md`) và bộ sinh C++ (ADR
   0004). Codegen kiểm mọi luật của schema (tên, khoảng, lượng tử hoá, cỡ tối đa theo kênh, khai báo
   thừa) và báo `tệp:dòng:cột`; CMake sinh lại code vào `out/` khi schema hay codegen đổi

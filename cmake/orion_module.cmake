@@ -264,6 +264,29 @@ function(_orion_module_tests target rel exceptions_flag test_deps test_external)
     endif()
 endfunction()
 
+# orion_add_program(<tên>): chương trình từ main.cpp của module ở thư mục hiện tại, link target của
+# module đó; gọi sau orion_add_module. Tên theo ARCH §6: orion_<tên>, ví dụ orion_migrate.
+function(orion_add_program name)
+    if(ARGN)
+        message(FATAL_ERROR "orion_add_program: tham số lạ ${ARGN}")
+    endif()
+    if(NOT name MATCHES "^orion_[a-z0-9_]+$")
+        message(FATAL_ERROR "orion_add_program: tên ${name} phải có dạng orion_<tên> (ARCH §6)")
+    endif()
+    _orion_module_identity("${CMAKE_CURRENT_SOURCE_DIR}" target kind tier rel)
+    if(NOT TARGET ${target})
+        message(FATAL_ERROR
+            "orion_add_program: ${rel} chưa có module ${target}; gọi orion_add_module trước")
+    endif()
+    set(main "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
+    if(NOT EXISTS "${main}")
+        message(FATAL_ERROR "orion_add_program: ${rel} không có main.cpp")
+    endif()
+    add_executable(${name} "${main}")
+    orion_apply_flags(${name})
+    target_link_libraries(${name} PRIVATE ${target})
+endfunction()
+
 # orion_add_fuzz_target(<tên> DEPS <module>...)
 #
 # Target fuzz_<tên> từ tests/fuzz/<tên>.cpp, corpus hạt giống ở tests/fuzz/corpus/<tên>/ (CLAUDE.md
